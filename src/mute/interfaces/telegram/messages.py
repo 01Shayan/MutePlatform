@@ -84,12 +84,36 @@ def backup_result(summary: BackupSummary) -> str:
     )
 
 
-def backup_history(archives: list[BackupArchive], *, title: str = "Backup History") -> str:
+def backup_history(
+    archives: list[BackupArchive],
+    *,
+    title: str = "Backup History",
+    selectable: bool = False,
+) -> str:
     lines = [title, ""]
     if not archives:
         lines.append("No backups have been created yet.")
     else:
         lines.extend(f"{index}. {' — '.join(archive_display(archive))}" for index, archive in enumerate(archives, start=1))
+        if selectable:
+            lines.append("")
+            lines.append("Select an archive to view details.")
+    return "\n".join(lines)
+
+
+def archive_details(workspace: str, archive: BackupArchive) -> str:
+    name, created, size = archive_display(archive)
+    lines = [
+        "Archive Details",
+        "",
+        f"Workspace: {workspace}",
+        f"Archive Name: {name}",
+        f"Created Time: {created}",
+        f"({archive.created_at:%Y-%m-%d %H:%M:%S})",
+        f"Archive Size: {size}",
+    ]
+    if archive.users is not None:
+        lines.append(f"User Count: {archive.users}")
     return "\n".join(lines)
 
 

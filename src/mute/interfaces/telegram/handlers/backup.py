@@ -20,7 +20,9 @@ from ....core.workspace import Workspace
 from ....services.backup import BackupApplicationService, BackupOperationError
 from ....services.workspace import ConnectionStatus, WorkspaceApplicationService
 from ..auth import OwnerAuthorization
+from ..conversation import begin_temporary, cleanup_temporary
 from ..keyboards import (
+    archive_details_keyboard,
     backup_back_keyboard,
     backup_history_keyboard,
     backup_menu_keyboard,
@@ -32,6 +34,7 @@ from ..keyboards import (
     delete_single_list_keyboard,
 )
 from ..messages import (
+    archive_details,
     backup_error,
     backup_history,
     backup_progress,
@@ -44,6 +47,7 @@ from ..messages import (
     no_backups_to_delete,
 )
 from ..router import Router
+from ..session import Screen
 
 logger = get_logger("telegram")
 
@@ -73,10 +77,12 @@ def make_backup_handler(
 
         if data == "backup:menu":
             await query.answer()
+            await cleanup_temporary(context.bot, router, chat.id)
             router.backup(chat.id)
             await _show_menu(query, service, workspace)
         elif data == "backup:dashboard":
             await query.answer()
+            await cleanup_temporary(context.bot, router, chat.id)
             router.dashboard(chat.id, workspace.name)
             item = workspaces_service.navigation_item(workspace.name)
             await _safe_edit(query, dashboard(item), dashboard_keyboard())
@@ -84,8 +90,13 @@ def make_backup_handler(
             await _create_export(update, context, router, service, workspace)
         elif data == "backup:history":
             await query.answer()
-            router.backup_history(chat.id)
-            await _safe_edit(query, backup_history(service.archives(workspace)), backup_history_keyboard())
+            await cleanup_temporary(context.bot, router, chat.id)
+            await _show_history(query, router, service, workspace, chat.id)
+        elif data.startswith("backup:archive:"):
+            await query.answer()
+            await _show_archive_details(
+                query, context, router, service, workspace, chat.id, data.removeprefix("backup:archive:")
+            )
         elif data == "backup:delete":
             await query.answer()
             router.backup_delete(chat.id)
@@ -98,17 +109,23 @@ def make_backup_handler(
             await _show_delete_all(query, router, service, workspace, chat.id)
         elif data.startswith("backup:delete:"):
             await query.answer()
-            await _confirm_delete_single(query, router, service, workspace, chat.id, data.removeprefix("backup:delete:"))
+            await _confirm_delete_single(
+                query, router, service, workspace, chat.id, data.removeprefix("backup:delete:")
+            )
         elif data.startswith("backup:confirm-delete:"):
             await query.answer()
-            await _perform_delete_single(query, router, service, workspace, chat.id, data.removeprefix("backup:confirm-delete:"))
+            await _perform_delete_single(
+                query, context, router, service, workspace, chat.id, data.removeprefix("backup:confirm-delete:")
+            )
         elif data == "backup:confirm-delete-all":
             await query.answer()
             service.delete_all_archives(workspace)
             router.backup(chat.id)
             await _show_menu(query, service, workspace)
         elif data.startswith("backup:download:"):
-            await _download(update, context, service, workspace, chat.id, data.removeprefix("backup:download:"))
+            await _download(
+                update, context, router, service, workspace, chat.id, data.removeprefix("backup:download:")
+            )
 
     return handle
 
@@ -130,6 +147,30 @@ def _resolve_workspace(
 async def _show_menu(query, service: BackupApplicationService, workspace: Workspace) -> None:
     latest = service.latest(workspace)
     await _safe_edit(query, backup_status(latest, workspace=workspace.name), backup_menu_keyboard())
+
+
+async def _show_history(query, router: Router, service, workspace, chat_id) -> None:
+    archives = service.archives(workspace)
+    router.backup_history(chat_id)
+    names = [archive.path.name for archive in archives]
+    await _safe_edit(query, backup_history(archives, selectable=True), backup_history_keyboard(names))
+
+
+async def _show_archive_details(query, context, router, service, workspace, chat_id, archive_name) -> None:
+    archive = _find_archive(service, workspace, archive_name)
+    if archive is None:
+        await cleanup_temporary(context.bot, router, chat_id)
+        await _show_history(query, router, service, workspace, chat_id)
+        return
+    begin_temporary(router, chat_id)
+    if query.message is not None:
+        router.remember_message(chat_id, query.message.message_id)
+    router.backup_archive_detail(chat_id, archive_name)
+    await _safe_edit(
+        query,
+        archive_details(workspace.name, archive),
+        archive_details_keyboard(archive_name),
+    )
 
 
 async def _show_delete_single(query, router: Router, service, workspace, chat_id) -> None:
@@ -158,18 +199,34 @@ async def _confirm_delete_single(query, router: Router, service, workspace, chat
         router.backup(chat_id)
         await _show_menu(query, service, workspace)
         return
+    session = router.session(chat_id)
+    from_details = session.current_screen is Screen.BACKUP_ARCHIVE_DETAIL
+    if from_details:
+        session.draft["backup_delete_no"] = f"backup:archive:{archive_name}"
+        session.draft["backup_delete_return_history"] = True
+    else:
+        session.draft.pop("backup_delete_no", None)
+        session.draft.pop("backup_delete_return_history", None)
     router.backup_delete_confirmation(chat_id, archive_name)
+    no_data = session.draft.get("backup_delete_no", "backup:delete-single")
     await _safe_edit(
         query,
         delete_single_confirmation(workspace.name, archive),
-        delete_single_confirm_keyboard(archive_name),
+        delete_single_confirm_keyboard(archive_name, no_data=no_data),
     )
 
 
-async def _perform_delete_single(query, router: Router, service, workspace, chat_id, archive_name) -> None:
+async def _perform_delete_single(query, context, router, service, workspace, chat_id, archive_name) -> None:
     archive = _find_archive(service, workspace, archive_name)
     if archive is not None:
         service.delete_archive(workspace, archive)
+    session = router.session(chat_id)
+    return_history = bool(session.draft.pop("backup_delete_return_history", False))
+    session.draft.pop("backup_delete_no", None)
+    await cleanup_temporary(context.bot, router, chat_id)
+    if return_history:
+        await _show_history(query, router, service, workspace, chat_id)
+        return
     router.backup(chat_id)
     await _show_menu(query, service, workspace)
 
@@ -204,7 +261,7 @@ async def _create_export(update, context, router: Router, service, workspace) ->
     )
 
 
-async def _download(update, context, service, workspace, chat_id, archive_name) -> None:
+async def _download(update, context, router, service, workspace, chat_id, archive_name) -> None:
     query = update.callback_query
     download = service.download_archive(workspace, archive_name)
     if download is None:
@@ -215,6 +272,20 @@ async def _download(update, context, service, workspace, chat_id, archive_name) 
         chat_id=chat_id,
         document=InputFile(io.BytesIO(download.content), filename=download.filename),
     )
+    session = router.session(chat_id)
+    if session.current_screen is Screen.BACKUP_ARCHIVE_DETAIL:
+        archive = _find_archive(service, workspace, archive_name)
+        if archive is None:
+            await cleanup_temporary(context.bot, router, chat_id)
+            await _show_history(query, router, service, workspace, chat_id)
+            return
+        await _safe_edit(
+            query,
+            archive_details(workspace.name, archive),
+            archive_details_keyboard(archive_name),
+        )
+        return
+    router.backup(chat_id)
     await _safe_edit(query, backup_status(service.latest(workspace), workspace=workspace.name), backup_menu_keyboard())
 
 

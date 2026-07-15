@@ -48,6 +48,7 @@ class BackupArchive:
     path: Path
     created_at: datetime
     size_bytes: int
+    users: int | None = None
 
 
 @dataclass(frozen=True)
@@ -100,7 +101,7 @@ class BackupApplicationService:
             (path for path in directory.rglob("backup_*.json") if path.name != LATEST_FILENAME),
             key=lambda path: path.name, reverse=True,
         )
-        return [BackupArchive(path, self._created_at(path), path.stat().st_size) for path in paths]
+        return [BackupApplicationService._to_archive(path) for path in paths]
 
     def delete_archive(self, workspace: Workspace, archive: BackupArchive) -> None:
         archive.path.unlink(missing_ok=True)
@@ -130,12 +131,20 @@ class BackupApplicationService:
             latest_path.unlink()
 
     @staticmethod
-    def _created_at(path: Path) -> datetime:
+    def _to_archive(path: Path) -> BackupArchive:
+        created_at, users = BackupApplicationService._read_metadata(path)
+        return BackupArchive(path, created_at, path.stat().st_size, users)
+
+    @staticmethod
+    def _read_metadata(path: Path) -> tuple[datetime, int | None]:
         try:
             metadata = json.loads(path.read_text(encoding="utf-8")).get("metadata", {})
-            return datetime.fromisoformat(metadata["created_at"])
-        except (json.JSONDecodeError, OSError, KeyError, ValueError):
-            return datetime.fromtimestamp(path.stat().st_mtime)
+            created_at = datetime.fromisoformat(metadata["created_at"])
+            raw_users = metadata.get("users_count")
+            users = int(raw_users) if raw_users is not None else None
+            return created_at, users
+        except (json.JSONDecodeError, OSError, KeyError, TypeError, ValueError):
+            return datetime.fromtimestamp(path.stat().st_mtime), None
 
 
 def format_size(num_bytes: int) -> str:

@@ -50,6 +50,9 @@ class Router:
     def backup_history(self, chat_id: int) -> TelegramSession:
         return self.go_to(chat_id, Screen.BACKUP_HISTORY)
 
+    def backup_archive_detail(self, chat_id: int, archive_name: str) -> TelegramSession:
+        return self.go_to(chat_id, Screen.BACKUP_ARCHIVE_DETAIL, action=archive_name)
+
     def backup_delete(self, chat_id: int) -> TelegramSession:
         return self.go_to(chat_id, Screen.BACKUP_DELETE)
 

@@ -147,7 +147,7 @@ def test_menu_with_backup_shows_status(tmp_path):
     assert "hours ago" in text
 
 
-# -- history (read only) --------------------------------------------------------------
+# -- history + archive details --------------------------------------------------------
 
 
 def test_history_lists_archives(tmp_path):
@@ -161,6 +161,117 @@ def test_history_lists_archives(tmp_path):
     text = result.query.edit_message_text.await_args.args[0]
     assert "backup_2026-07-11_12-00-00.json" in text
     assert "backup_2026-07-10_12-00-00.json" in text
+    assert "Select an archive" in text
+    markup = result.query.edit_message_text.await_args.kwargs["reply_markup"]
+    labels = [btn.text for row in markup.inline_keyboard for btn in row]
+    assert "backup_2026-07-11_12-00-00.json" in labels
+    assert "Back" in labels
+
+
+def test_select_archive_opens_details(tmp_path):
+    ws = _make_workspace(tmp_path)
+    path = _write_archive(ws, datetime(2026, 7, 11, 12, 0, 0), users=5)
+    result = _dispatch(tmp_path, f"backup:archive:{path.name}", workspace=ws)
+
+    assert result.sessions.get(CHAT_ID).current_screen is Screen.BACKUP_ARCHIVE_DETAIL
+    assert result.sessions.get(CHAT_ID).current_action == path.name
+    text = result.query.edit_message_text.await_args.args[0]
+    assert "Archive Details" in text
+    assert path.name in text
+    assert "User Count: 5" in text
+    assert "Archive Size:" in text
+    markup = result.query.edit_message_text.await_args.kwargs["reply_markup"]
+    labels = [btn.text for row in markup.inline_keyboard for btn in row]
+    assert labels == ["Download Backup", "Delete Backup", "Back"]
+    callbacks = [btn.callback_data for row in markup.inline_keyboard for btn in row]
+    assert callbacks == [
+        f"backup:download:{path.name}",
+        f"backup:delete:{path.name}",
+        "backup:history",
+    ]
+
+
+def test_archive_details_back_returns_to_history(tmp_path):
+    ws = _make_workspace(tmp_path)
+    path = _write_archive(ws, datetime(2026, 7, 11, 12, 0, 0))
+    sessions = SessionManager()
+    sessions.get(CHAT_ID).current_workspace = ws.name
+    router = Router(sessions)
+    handler = make_backup_handler(OwnerAuthorization(frozenset({OWNER_ID})), router, FakeWorkspaceService(ws))
+    context = _make_context()
+
+    update, query = _make_update(f"backup:archive:{path.name}")
+    asyncio.run(handler(update, context))
+    assert sessions.get(CHAT_ID).current_screen is Screen.BACKUP_ARCHIVE_DETAIL
+
+    query.data = "backup:history"
+    asyncio.run(handler(update, context))
+    assert sessions.get(CHAT_ID).current_screen is Screen.BACKUP_HISTORY
+    assert "Backup History" in query.edit_message_text.await_args.args[0]
+
+
+def test_download_from_details_stays_on_details(tmp_path):
+    ws = _make_workspace(tmp_path)
+    path = _write_archive(ws, datetime(2026, 7, 11, 12, 0, 0), users=2)
+    sessions = SessionManager()
+    sessions.get(CHAT_ID).current_workspace = ws.name
+    router = Router(sessions)
+    handler = make_backup_handler(OwnerAuthorization(frozenset({OWNER_ID})), router, FakeWorkspaceService(ws))
+    context = _make_context()
+
+    update, query = _make_update(f"backup:archive:{path.name}")
+    asyncio.run(handler(update, context))
+
+    query.data = f"backup:download:{path.name}"
+    asyncio.run(handler(update, context))
+
+    context.bot.send_document.assert_awaited()
+    assert sessions.get(CHAT_ID).current_screen is Screen.BACKUP_ARCHIVE_DETAIL
+    text = query.edit_message_text.await_args.args[0]
+    assert "Archive Details" in text
+    assert path.name in text
+
+
+def test_delete_from_details_confirm_no_returns_to_details(tmp_path):
+    ws = _make_workspace(tmp_path)
+    path = _write_archive(ws, datetime(2026, 7, 11, 12, 0, 0))
+    sessions = SessionManager()
+    sessions.get(CHAT_ID).current_workspace = ws.name
+    router = Router(sessions)
+    handler = make_backup_handler(OwnerAuthorization(frozenset({OWNER_ID})), router, FakeWorkspaceService(ws))
+
+    update, query = _make_update(f"backup:archive:{path.name}")
+    asyncio.run(handler(update, _make_context()))
+
+    query.data = f"backup:delete:{path.name}"
+    asyncio.run(handler(update, _make_context()))
+    assert sessions.get(CHAT_ID).current_screen is Screen.BACKUP_DELETE_CONFIRM
+    markup = query.edit_message_text.await_args.kwargs["reply_markup"]
+    no_callback = markup.inline_keyboard[1][0].callback_data
+    assert no_callback == f"backup:archive:{path.name}"
+
+    query.data = no_callback
+    asyncio.run(handler(update, _make_context()))
+    assert sessions.get(CHAT_ID).current_screen is Screen.BACKUP_ARCHIVE_DETAIL
+
+
+def test_delete_from_details_yes_returns_to_history(tmp_path):
+    ws = _make_workspace(tmp_path)
+    path = _write_archive(ws, datetime(2026, 7, 11, 12, 0, 0))
+    sessions = SessionManager()
+    sessions.get(CHAT_ID).current_workspace = ws.name
+    router = Router(sessions)
+    handler = make_backup_handler(OwnerAuthorization(frozenset({OWNER_ID})), router, FakeWorkspaceService(ws))
+
+    update, query = _make_update(f"backup:archive:{path.name}")
+    asyncio.run(handler(update, _make_context()))
+    query.data = f"backup:delete:{path.name}"
+    asyncio.run(handler(update, _make_context()))
+    query.data = f"backup:confirm-delete:{path.name}"
+    asyncio.run(handler(update, _make_context()))
+
+    assert not path.exists()
+    assert sessions.get(CHAT_ID).current_screen is Screen.BACKUP_HISTORY
 
 
 # -- delete flows ---------------------------------------------------------------------

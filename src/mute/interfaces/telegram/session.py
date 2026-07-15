@@ -14,6 +14,7 @@ class Screen(str, Enum):
     ABOUT = "about"
     BACKUP = "backup"
     BACKUP_HISTORY = "backup-history"
+    BACKUP_ARCHIVE_DETAIL = "backup-archive-detail"
     BACKUP_DELETE = "backup-delete"
     BACKUP_DELETE_SINGLE = "backup-delete-single"
     BACKUP_DELETE_CONFIRM = "backup-delete-confirm"

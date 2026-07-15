@@ -106,9 +106,22 @@ def backup_menu_keyboard() -> InlineKeyboardMarkup:
     )
 
 
-def backup_history_keyboard() -> InlineKeyboardMarkup:
-    """Read-only history view returns to the Backup page."""
-    return inline_keyboard([[("Back", "backup:menu")]])
+def backup_history_keyboard(archive_names: list[str]) -> InlineKeyboardMarkup:
+    """History list: one button per archive, then Back to the Backup menu."""
+    rows = [[(name, f"backup:archive:{name}")] for name in archive_names]
+    rows.append([("Back", "backup:menu")])
+    return inline_keyboard(rows)
+
+
+def archive_details_keyboard(archive_name: str) -> InlineKeyboardMarkup:
+    """Archive Details actions — Download, Delete, or Back to History."""
+    return inline_keyboard(
+        [
+            [("Download Backup", f"backup:download:{archive_name}")],
+            [("Delete Backup", f"backup:delete:{archive_name}")],
+            [("Back", "backup:history")],
+        ]
+    )
 
 
 def delete_menu_keyboard() -> InlineKeyboardMarkup:
@@ -128,9 +141,11 @@ def delete_single_list_keyboard(archive_names: list[str]) -> InlineKeyboardMarku
     return inline_keyboard(rows)
 
 
-def delete_single_confirm_keyboard(archive_name: str) -> InlineKeyboardMarkup:
+def delete_single_confirm_keyboard(
+    archive_name: str, *, no_data: str = "backup:delete-single"
+) -> InlineKeyboardMarkup:
     return inline_keyboard(
-        [[("Yes", f"backup:confirm-delete:{archive_name}")], [("No", "backup:delete-single")]]
+        [[("Yes", f"backup:confirm-delete:{archive_name}")], [("No", no_data)]]
     )
 
 
