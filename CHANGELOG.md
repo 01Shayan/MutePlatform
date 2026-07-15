@@ -26,6 +26,7 @@ adheres to [Semantic Versioning](https://semver.org/).
 - Job lifecycle correctness
 - Reliability of workspace storage
 - Logging consistency between CLI and Telegram
+- Added official systemd deployment template
 
 ### Notes
 

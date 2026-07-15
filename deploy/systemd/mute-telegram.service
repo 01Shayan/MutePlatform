@@ -1,0 +1,19 @@
+[Unit]
+Description=Mute Platform Telegram Bot
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/MutePlatform
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONPATH=/opt/MutePlatform/src
+ExecStart=/opt/MutePlatform/.venv/bin/python -m mute.interfaces.telegram.app
+Restart=on-failure
+RestartSec=5
+StartLimitIntervalSec=60
+StartLimitBurst=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

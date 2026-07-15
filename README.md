@@ -234,6 +234,85 @@ Configuration migrates automatically — no manual edits required.
 
 ---
 
+## Deployment
+
+Deploy the Telegram bot as a systemd service on Ubuntu/Debian. The example below assumes the
+repository is installed at `/opt/MutePlatform`.
+
+**1. Clone the repository**
+
+```bash
+sudo git clone https://github.com/01Shayan/MutePlatform.git /opt/MutePlatform
+sudo chown -R $USER:$USER /opt/MutePlatform
+cd /opt/MutePlatform
+```
+
+**2. Create a virtual environment**
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+**3. Install requirements**
+
+```bash
+pip install -r requirements.txt
+```
+
+Run the CLI once to complete the Setup Wizard and configure Telegram before starting the service.
+
+**4. Copy the service file**
+
+```bash
+sudo cp deploy/systemd/mute-telegram.service /etc/systemd/system/
+```
+
+**5. Reload systemd**
+
+```bash
+sudo systemctl daemon-reload
+```
+
+**6. Enable the service**
+
+```bash
+sudo systemctl enable mute-telegram
+```
+
+**7. Start the service**
+
+```bash
+sudo systemctl start mute-telegram
+```
+
+**8. Check status**
+
+```bash
+sudo systemctl status mute-telegram
+```
+
+**9. View logs**
+
+```bash
+journalctl -u mute-telegram -f
+```
+
+**10. Restart after updates**
+
+```bash
+cd /opt/MutePlatform
+git pull
+source .venv/bin/activate
+pip install -r requirements.txt
+sudo systemctl restart mute-telegram
+```
+
+If you install the repository elsewhere, edit `WorkingDirectory`, `PYTHONPATH`, and `ExecStart`
+in `/etc/systemd/system/mute-telegram.service` before enabling the service.
+
+---
+
 ## 🗺️ Roadmap
 
 ```
@@ -274,6 +353,8 @@ MutePlatform/
 ├── requirements.txt
 ├── .gitignore
 ├── .env.example
+├── deploy/
+│   └── systemd/
 ├── config/
 ├── workspaces/          # git-ignored
 ├── src/mute/
