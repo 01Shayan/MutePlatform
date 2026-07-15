@@ -33,12 +33,16 @@ class JobError(Exception):
 
 @dataclass
 class JobOutcome:
-    """The result a job returns for its summary screen."""
+    """The result a job returns for its summary screen.
+
+    Job-history recording is owned by the application service that performs the work (e.g. the
+    backup service writes its own history entry), not by the lifecycle. The lifecycle only renders
+    the summary, so there is no hidden expectation that it persists anything here.
+    """
 
     title: str
     rows: list[tuple[str, str]] = field(default_factory=list)
     style: str = "success"
-    history: dict | None = None  # written to the workspace's history/ on success
 
 
 class ProgressReporter:

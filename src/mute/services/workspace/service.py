@@ -57,7 +57,11 @@ class WorkspaceApplicationService:
         return self.store.set_active(workspace.name)
 
     def name_is_available(self, name: str, *, current: str | None = None) -> bool:
-        return name == current or not self.store.exists(name)
+        if name == current:
+            return True
+        if self.store.exists(name):
+            return False
+        return self.store.dir_is_free(name, current=current)
 
     @staticmethod
     def integrations() -> list[Integration]:

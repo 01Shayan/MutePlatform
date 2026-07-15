@@ -9,7 +9,7 @@ from __future__ import annotations
 from rich.prompt import Confirm, Prompt
 
 from ...core.integrations import Integration
-from ...core.workspace import Workspace
+from ...core.workspace import InvalidWorkspaceName, Workspace, validate_workspace_name
 from ...services.workspace import WorkspaceApplicationService
 from .. import theme
 from ..theme import Icon, console
@@ -48,8 +48,10 @@ def prompt_name(service: WorkspaceApplicationService, *, current: str | None = N
     console.print()
     console.print(theme.section("Workspace Name", Icon.WORKSPACES))
     name = Prompt.ask("Workspace name", default=current).strip()
-    if not name:
-        theme.notify_warning("Name cannot be empty. Cancelled.")
+    try:
+        name = validate_workspace_name(name)
+    except InvalidWorkspaceName as exc:
+        theme.notify_warning(f"{exc} Cancelled.")
         theme.pause()
         return None
     if not service.name_is_available(name, current=current):

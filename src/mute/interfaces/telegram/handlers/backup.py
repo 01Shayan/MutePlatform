@@ -15,7 +15,7 @@ from telegram import InputFile, Update
 from telegram.error import BadRequest
 from telegram.ext import ContextTypes
 
-from ....core.logging import get_logger
+from ....core.logging import get_logger, use_workspace
 from ....core.workspace import Workspace
 from ....services.backup import BackupApplicationService, BackupOperationError
 from ....services.workspace import WorkspaceApplicationService
@@ -119,7 +119,12 @@ def _resolve_workspace(
     name = router.session(chat_id).current_workspace
     if not name:
         return None
-    return workspaces_service.workspace(name)
+    workspace = workspaces_service.workspace(name)
+    if workspace is not None:
+        # Route logging into the active workspace, exactly as the CLI does when opening one, so
+        # Telegram-triggered application, backup, and error logs land in workspaces/<name>/logs/.
+        use_workspace(workspace.logs_dir)
+    return workspace
 
 
 async def _show_menu(query, service: BackupApplicationService, workspace: Workspace) -> None:

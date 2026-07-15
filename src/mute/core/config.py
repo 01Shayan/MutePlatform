@@ -22,6 +22,7 @@ from dataclasses import dataclass
 
 from dotenv import load_dotenv
 
+from .jsonio import write_json_atomic
 from .paths import CONFIG_DIR, ENV_PATH, SETTINGS_PATH
 from .profiles import Profile
 
@@ -84,8 +85,7 @@ def _read_settings() -> dict:
 
 
 def _write_settings(settings: dict) -> None:
-    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-    SETTINGS_PATH.write_text(json.dumps(settings, indent=2), encoding="utf-8")
+    write_json_atomic(SETTINGS_PATH, settings)
 
 
 def migrate_settings(settings: dict) -> tuple[dict, bool]:

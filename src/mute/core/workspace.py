@@ -19,13 +19,13 @@ On disk::
 from __future__ import annotations
 
 import json
-import os
 import shutil
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
 from .integrations import integration_name, resolve_integration_key
+from .jsonio import write_json_atomic
 from .logging import get_logger
 from .paths import BACKUPS_DIR, WORKSPACES_DIR, WORKSPACES_PATH
 
@@ -37,11 +37,61 @@ _CONNECTION_FIELDS = ("base_url", "username", "password", "token", "verify_ssl")
 # The per-workspace data folders that are always created.
 _SUBDIRS = ("backups", "migrations", "reports", "exports", "logs", "cache", "history")
 
+# Characters that are illegal in a workspace name (path separators and Windows-reserved chars).
+_ILLEGAL_CHARS = '/\\:*?"<>|'
+
+# Windows reserved device names — rejected so a workspace can never map to a special file.
+_RESERVED_NAMES = {
+    "con", "prn", "aux", "nul",
+    *(f"com{i}" for i in range(1, 10)),
+    *(f"lpt{i}" for i in range(1, 10)),
+}
+
+
+class InvalidWorkspaceName(ValueError):
+    """Raised when a workspace name is unsafe or would collide with another workspace."""
+
+
+def validate_workspace_name(name: str) -> str:
+    """Return the trimmed name if it is a safe filesystem identifier, else raise.
+
+    Rejects empty/whitespace names, ``.`` and ``..``, path separators (traversal), control
+    characters, names that are only dots/spaces, and Windows reserved device names.
+    """
+    cleaned = (name or "").strip()
+    if not cleaned:
+        raise InvalidWorkspaceName("Workspace name cannot be empty.")
+    if cleaned in {".", ".."}:
+        raise InvalidWorkspaceName("Workspace name cannot be '.' or '..'.")
+    if "/" in cleaned or "\\" in cleaned:
+        raise InvalidWorkspaceName("Workspace name cannot contain '/' or '\\'.")
+    if any(ord(ch) < 32 for ch in cleaned):
+        raise InvalidWorkspaceName("Workspace name cannot contain control characters.")
+    if any(ch in _ILLEGAL_CHARS for ch in cleaned):
+        raise InvalidWorkspaceName('Workspace name cannot contain any of : * ? " < > |')
+    if set(cleaned) <= {".", " "}:
+        raise InvalidWorkspaceName("Workspace name cannot consist only of dots or spaces.")
+    if cleaned.split(".", 1)[0].lower() in _RESERVED_NAMES:
+        raise InvalidWorkspaceName(f"'{cleaned}' is a reserved name.")
+    return cleaned
+
 
 def _safe_dirname(name: str) -> str:
-    """Turn a workspace name into a filesystem-safe directory name."""
-    cleaned = "".join("_" if ch in '/\\:*?"<>|' else ch for ch in name).strip()
-    return cleaned or "workspace"
+    """Turn a workspace name into a filesystem-safe directory name.
+
+    Validated names (see :func:`validate_workspace_name`) map to themselves, so directories stay
+    human-readable and stable. This remains a defensive net that never returns ``""``, ``.`` or
+    ``..`` even for un-validated legacy input.
+    """
+    cleaned = "".join("_" if ch in _ILLEGAL_CHARS else ch for ch in name).strip()
+    if not cleaned or set(cleaned) <= {"."}:
+        return "workspace"
+    return cleaned
+
+
+def _dir_key(name: str) -> str:
+    """The case-insensitive directory identity of a name, for collision detection."""
+    return _safe_dirname(name).casefold()
 
 
 @dataclass
@@ -203,29 +253,56 @@ class WorkspaceStore:
         self._names = []
         self._active = None
         if not self.registry_path.exists():
+            self._recover_from_disk()
             return
         try:
             raw = json.loads(self.registry_path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError) as exc:
-            logger.warning("Could not read workspace registry %s: %s", self.registry_path, exc)
+            logger.warning(
+                "Workspace registry %s is unreadable (%s); recovering from disk.",
+                self.registry_path, exc,
+            )
+            self._recover_from_disk()
             return
         self._names = [n for n in raw.get("workspaces", []) if isinstance(n, str)]
         active = raw.get("active")
         self._active = active if active in self._names else None
 
+    def _recover_from_disk(self) -> None:
+        """Rebuild the registry by scanning ``workspaces/*/workspace.json``.
+
+        A corrupted or missing registry must never silently lose every workspace. Each manifest's
+        recorded name is trusted; the recovered registry is persisted so recovery happens once.
+        The active workspace is not recorded in manifests, so the first recovered name is used.
+        """
+        if not self.root.exists():
+            return
+        recovered: list[str] = []
+        for child in sorted(self.root.iterdir()):
+            manifest = child / "workspace.json"
+            if not manifest.is_file():
+                continue
+            try:
+                data = json.loads(manifest.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError) as exc:
+                logger.warning("Skipping unreadable manifest %s: %s", manifest, exc)
+                continue
+            name = data.get("workspace_name") or data.get("name")
+            if isinstance(name, str) and name and name not in recovered:
+                recovered.append(name)
+        if not recovered:
+            return
+        self._names = recovered
+        self._active = recovered[0]
+        logger.warning("Recovered %d workspace(s) from disk.", len(recovered))
+        self._save_registry()
+
     def _save_registry(self) -> None:
-        self.registry_path.parent.mkdir(parents=True, exist_ok=True)
         payload = {"active": self._active, "workspaces": self._names}
-        self.registry_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        write_json_atomic(self.registry_path, payload)
 
     def _write_manifest(self, workspace: Workspace) -> None:
-        workspace.manifest_path.write_text(
-            json.dumps(workspace.to_dict(), indent=2), encoding="utf-8"
-        )
-        try:
-            os.chmod(workspace.manifest_path, 0o600)
-        except OSError as exc:  # best-effort on platforms without chmod semantics
-            logger.debug("Could not set permissions on %s: %s", workspace.manifest_path, exc)
+        write_json_atomic(workspace.manifest_path, workspace.to_dict(), mode=0o600)
 
     # -- queries ----------------------------------------------------------------------
 
@@ -237,6 +314,17 @@ class WorkspaceStore:
 
     def exists(self, name: str) -> bool:
         return name in self._names
+
+    def dir_is_free(self, name: str, *, current: str | None = None) -> bool:
+        """True if ``name`` does not collide with another workspace's directory.
+
+        Collision is checked on the case-insensitive directory identity so two distinct names can
+        never resolve to (or, on case-insensitive filesystems, share) the same folder.
+        """
+        key = _dir_key(name)
+        return not any(
+            existing != current and _dir_key(existing) == key for existing in self._names
+        )
 
     def get(self, name: str) -> Workspace | None:
         if name not in self._names:
@@ -265,6 +353,11 @@ class WorkspaceStore:
     # -- mutations --------------------------------------------------------------------
 
     def create(self, workspace: Workspace, *, make_active: bool = False) -> Workspace:
+        workspace.name = validate_workspace_name(workspace.name)
+        if not self.dir_is_free(workspace.name):
+            raise InvalidWorkspaceName(
+                f"'{workspace.name}' collides with an existing workspace directory."
+            )
         workspace.root = self.root
         workspace._store = self
         workspace.ensure_dirs()
@@ -284,8 +377,15 @@ class WorkspaceStore:
         self._write_manifest(workspace)
 
     def rename(self, old_name: str, new_name: str) -> bool:
-        """Rename a workspace, moving its whole data folder. Returns False on conflict."""
-        if old_name not in self._names or (new_name != old_name and new_name in self._names):
+        """Rename a workspace, moving its data folder and keeping the manifest consistent.
+
+        Returns ``False`` on conflict. After a successful rename the manifest's ``workspace_name``
+        always matches the registry, so a later ``get(new_name)`` never returns stale metadata.
+        """
+        if old_name not in self._names:
+            return False
+        new_name = validate_workspace_name(new_name)
+        if new_name != old_name and not self.dir_is_free(new_name, current=old_name):
             return False
         old_dir = self.root / _safe_dirname(old_name)
         new_dir = self.root / _safe_dirname(new_name)
@@ -298,7 +398,20 @@ class WorkspaceStore:
         if self._active == old_name:
             self._active = new_name
         self._save_registry()
+        self._rewrite_manifest_name(new_name)
         return True
+
+    def _rewrite_manifest_name(self, name: str) -> None:
+        """Update the on-disk manifest's ``workspace_name`` so it matches the registry."""
+        manifest = self.root / _safe_dirname(name) / "workspace.json"
+        try:
+            data = json.loads(manifest.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            return
+        if data.get("workspace_name") == name:
+            return
+        data["workspace_name"] = name
+        write_json_atomic(manifest, data, mode=0o600)
 
     def set_token(self, name: str, token: str) -> None:
         workspace = self.get(name)

@@ -51,7 +51,6 @@ class BackupJob(Job):
             f"{Icon.SUCCESS} Export completed successfully",
             rows,
             style="success",
-            history=result.history,
         )
 
 

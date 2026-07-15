@@ -34,6 +34,7 @@ from pathlib import Path
 from typing import Callable
 
 from ...core.constants import TOOL_NAME, VERSION
+from ...core.jsonio import unique_path, write_json_atomic
 from ...core.logging import get_logger
 from ...core.paths import BACKUPS_DIR
 from ...core.workspace import Workspace
@@ -190,16 +191,14 @@ class BackupService:
 
     def _archive_path(self, created_at: datetime) -> Path:
         directory = self.base_dir / created_at.strftime("%Y") / created_at.strftime("%m")
-        filename = f"backup_{created_at.strftime('%Y-%m-%d_%H-%M-%S')}.json"
-        return directory / filename
+        directory.mkdir(parents=True, exist_ok=True)
+        stem = f"backup_{created_at.strftime('%Y-%m-%d_%H-%M-%S')}"
+        return unique_path(directory, stem, ".json")
 
     @staticmethod
     def _write(path: Path, payload: dict) -> None:
-        path.parent.mkdir(parents=True, exist_ok=True)
         try:
-            path.write_text(
-                json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
-            )
+            write_json_atomic(path, payload, ensure_ascii=False)
         except OSError as exc:
             raise BackupError(f"Could not write backup to {path}: {exc}") from exc
 

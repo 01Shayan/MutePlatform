@@ -12,10 +12,10 @@ also remembers which profile is currently *active*.
 from __future__ import annotations
 
 import json
-import os
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
+from .jsonio import write_json_atomic
 from .logging import get_logger
 from .paths import PROFILES_PATH
 
@@ -96,16 +96,11 @@ class ProfileStore:
         self._active = active if active in self._profiles else None
 
     def save(self) -> None:
-        self.path.parent.mkdir(parents=True, exist_ok=True)
         payload = {
             "active": self._active,
             "profiles": [p.to_dict() for p in self._profiles.values()],
         }
-        self.path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-        try:
-            os.chmod(self.path, 0o600)
-        except OSError as exc:  # best-effort on platforms without chmod semantics
-            logger.debug("Could not set permissions on %s: %s", self.path, exc)
+        write_json_atomic(self.path, payload, mode=0o600)
 
     # -- queries ----------------------------------------------------------------------
 
