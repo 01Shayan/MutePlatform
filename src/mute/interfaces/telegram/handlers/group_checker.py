@@ -19,6 +19,7 @@ from ....services.group_checker import (
 )
 from ....services.workspace import WorkspaceApplicationService
 from ..auth import OwnerAuthorization
+from ..conversation import begin_temporary, cleanup_temporary, track_temporary
 from ..keyboards import (
     dashboard_keyboard,
     group_checker_backups_keyboard,
@@ -81,6 +82,7 @@ def make_group_checker_handler(
             await _safe_edit(query, dashboard(item), dashboard_keyboard())
         elif data == "group_checker:run":
             await query.answer()
+            await cleanup_temporary(context.bot, router, chat.id)
             await _show_backup_list(query, router, service, workspace, chat.id)
         elif data.startswith("group_checker:backup:"):
             await query.answer()
@@ -94,6 +96,7 @@ def make_group_checker_handler(
         elif data.startswith("group_checker:query:"):
             await query.answer()
             backup_name = data.removeprefix("group_checker:query:")
+            begin_temporary(router, chat.id)
             session = router.group_checker_input(chat.id, backup_name)
             if query.message is not None:
                 router.remember_message(chat.id, query.message.message_id)
@@ -134,10 +137,12 @@ def make_group_checker_text_handler(
 
         backup_name = session.current_action or ""
         raw = (update.effective_message.text or "").strip()
+        track_temporary(router, chat.id, update.effective_message.message_id)
         try:
             group_ids = parse_group_ids(raw)
         except ValueError as exc:
-            await update.effective_message.reply_text(group_checker_invalid_ids(str(exc)))
+            sent = await update.effective_message.reply_text(group_checker_invalid_ids(str(exc)))
+            track_temporary(router, chat.id, sent.message_id)
             return
 
         sources = GroupCheckerApplicationService().list_backups(workspace)
@@ -157,7 +162,7 @@ def make_group_checker_text_handler(
                 )
                 return
             except BadRequest:
-                pass
+                track_temporary(router, chat.id, message_id)
         sent = await update.effective_message.reply_text(
             text, reply_markup=group_checker_confirm_keyboard()
         )
@@ -221,6 +226,7 @@ async def _run_confirmed(update, context, router: Router, service, workspace, ch
         )
     except GroupCheckerOperationError as exc:
         router.group_checker(chat_id)
+        await cleanup_temporary(context.bot, router, chat_id, keep=message_id)
         await _safe_edit_message(
             context, chat_id, message_id, group_checker_error(str(exc)), group_checker_menu_keyboard()
         )
@@ -228,12 +234,14 @@ async def _run_confirmed(update, context, router: Router, service, workspace, ch
     except Exception:  # noqa: BLE001 — surface a friendly message, log the detail
         logger.exception("Unexpected error during Telegram group checker query")
         router.group_checker(chat_id)
+        await cleanup_temporary(context.bot, router, chat_id, keep=message_id)
         await _safe_edit_message(
             context, chat_id, message_id, group_checker_error(), group_checker_menu_keyboard()
         )
         return
 
     router.group_checker_result(chat_id)
+    await cleanup_temporary(context.bot, router, chat_id, keep=message_id)
     await _safe_edit_message(
         context, chat_id, message_id, group_checker_result(result), group_checker_result_keyboard()
     )

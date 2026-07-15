@@ -15,6 +15,7 @@ from ....services.workspace import (
     WorkspaceOperationError,
 )
 from ..auth import OwnerAuthorization
+from ..conversation import begin_temporary, cleanup_temporary, track_temporary
 from ..keyboards import (
     auth_method_keyboard,
     cancel_keyboard,
@@ -80,6 +81,7 @@ def make_workspace_handler(
 
         if data == "ws:add":
             await query.answer()
+            begin_temporary(router, chat.id)
             session.draft = {"mode": "add"}
             router.go_to(chat.id, Screen.WS_ADD_NAME)
             if query.message is not None:
@@ -91,6 +93,7 @@ def make_workspace_handler(
                 await query.answer("Workspace is no longer available.", show_alert=True)
                 return
             await query.answer()
+            begin_temporary(router, chat.id)
             nav = workspaces_service.navigation_item(workspace.name)
             session.draft = {
                 "mode": "edit",
@@ -119,6 +122,7 @@ def make_workspace_handler(
                 await query.answer("Workspace is no longer available.", show_alert=True)
                 return
             await query.answer()
+            begin_temporary(router, chat.id)
             router.go_to(chat.id, Screen.WS_DELETE_CONFIRM, action=name)
             await _safe_edit(
                 query,
@@ -127,12 +131,14 @@ def make_workspace_handler(
             )
         elif data == "ws:delete-confirm":
             await query.answer()
-            await _delete_workspace(query, router, workspaces_service, chat.id)
+            await _delete_workspace(query, context, router, workspaces_service, chat.id)
         elif data == "ws:delete-cancel":
             await query.answer()
+            await cleanup_temporary(context.bot, router, chat.id)
             await _show_dashboard(query, router, workspaces_service, chat.id)
         elif data == "ws:cancel":
             await query.answer()
+            await cleanup_temporary(context.bot, router, chat.id)
             router.clear_draft(chat.id)
             router.workspaces(chat.id)
             items = workspaces_service.navigation_items()
@@ -141,6 +147,7 @@ def make_workspace_handler(
             )
         elif data == "ws:cancel-edit":
             await query.answer()
+            await cleanup_temporary(context.bot, router, chat.id)
             router.clear_draft(chat.id)
             await _show_dashboard(query, router, workspaces_service, chat.id)
         elif data.startswith("ws:integration-soon:"):
@@ -190,10 +197,10 @@ def make_workspace_handler(
             await _probe_and_confirm(query, context, router, workspaces_service, chat.id)
         elif data == "ws:confirm-create":
             await query.answer()
-            await _create_workspace(query, router, workspaces_service, chat.id)
+            await _create_workspace(query, context, router, workspaces_service, chat.id)
         elif data == "ws:confirm-update":
             await query.answer()
-            await _update_workspace(query, router, workspaces_service, chat.id)
+            await _update_workspace(query, context, router, workspaces_service, chat.id)
 
     return handle
 
@@ -217,6 +224,7 @@ def make_workspace_text_handler(
         text = (update.effective_message.text or "").strip()
         mode = session.draft.get("mode", "add")
         cancel = "ws:cancel" if mode == "add" else "ws:cancel-edit"
+        track_temporary(router, chat.id, update.effective_message.message_id)
 
         try:
             if session.current_screen in {Screen.WS_ADD_NAME, Screen.WS_EDIT_NAME}:
@@ -291,7 +299,8 @@ def make_workspace_text_handler(
                     verify_ssl_keyboard(cancel_data=cancel),
                 )
         except WorkspaceOperationError as exc:
-            await update.effective_message.reply_text(workspace_error(str(exc)))
+            sent = await update.effective_message.reply_text(workspace_error(str(exc)))
+            track_temporary(router, chat.id, sent.message_id)
         return True
 
     return handle
@@ -355,7 +364,7 @@ async def _probe_and_confirm(query, context, router, service, chat_id) -> None:
     )
 
 
-async def _create_workspace(query, router, service, chat_id) -> None:
+async def _create_workspace(query, context, router, service, chat_id) -> None:
     session = router.session(chat_id)
     draft = session.draft
     try:
@@ -374,6 +383,7 @@ async def _create_workspace(query, router, service, chat_id) -> None:
     router.clear_draft(chat_id)
     router.dashboard(chat_id, workspace.name)
     item = service.navigation_item(workspace.name)
+    await cleanup_temporary(context.bot, router, chat_id)
     await _safe_edit(
         query,
         f"{workspace_created(workspace.name)}\n\n{dashboard(item)}",
@@ -381,7 +391,7 @@ async def _create_workspace(query, router, service, chat_id) -> None:
     )
 
 
-async def _update_workspace(query, router, service, chat_id) -> None:
+async def _update_workspace(query, context, router, service, chat_id) -> None:
     session = router.session(chat_id)
     draft = session.draft
     original = service.workspace(draft.get("original_name", ""))
@@ -407,6 +417,7 @@ async def _update_workspace(query, router, service, chat_id) -> None:
     router.clear_draft(chat_id)
     router.dashboard(chat_id, updated.name)
     item = service.navigation_item(updated.name)
+    await cleanup_temporary(context.bot, router, chat_id)
     await _safe_edit(
         query,
         f"{workspace_updated(updated.name)}\n\n{dashboard(item)}",
@@ -414,11 +425,12 @@ async def _update_workspace(query, router, service, chat_id) -> None:
     )
 
 
-async def _delete_workspace(query, router, service, chat_id) -> None:
+async def _delete_workspace(query, context, router, service, chat_id) -> None:
     session = router.session(chat_id)
     name = session.current_action or session.current_workspace
     workspace = service.workspace(name) if name else None
     if workspace is None:
+        await cleanup_temporary(context.bot, router, chat_id)
         await _safe_edit(query, workspace_error("Workspace is no longer available."), workspaces_keyboard([]))
         router.workspaces(chat_id)
         return
@@ -427,6 +439,7 @@ async def _delete_workspace(query, router, service, chat_id) -> None:
     router.clear_draft(chat_id)
     router.workspaces(chat_id)
     items = service.navigation_items()
+    await cleanup_temporary(context.bot, router, chat_id)
     await _safe_edit(
         query,
         f"{workspace_deleted(name)}\n\n{workspaces(items)}",
@@ -455,7 +468,7 @@ async def _edit_or_reply(context, router, chat_id, update, text, reply_markup) -
             )
             return
         except BadRequest:
-            pass
+            track_temporary(router, chat_id, message_id)
     sent = await update.effective_message.reply_text(text, reply_markup=reply_markup)
     router.remember_message(chat_id, sent.message_id)
 

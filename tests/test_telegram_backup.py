@@ -61,7 +61,11 @@ def _write_latest(ws: Workspace, created_at: datetime, users: int = 3):
 
 
 def _make_context():
-    bot = SimpleNamespace(edit_message_text=AsyncMock(), send_document=AsyncMock())
+    bot = SimpleNamespace(
+        edit_message_text=AsyncMock(),
+        send_document=AsyncMock(),
+        delete_message=AsyncMock(),
+    )
     return SimpleNamespace(bot=bot)
 
 

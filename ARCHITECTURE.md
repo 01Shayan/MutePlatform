@@ -515,6 +515,32 @@ This rule is mandatory for all future features.
 
 ---
 
+## 48. Temporary Conversation Cleanup
+
+Interactive Telegram workflows must clean up temporary
+conversation messages after the workflow completes
+or is cancelled.
+
+Temporary messages include:
+
+• Bot prompts
+• User replies
+• Intermediate input requests
+
+They should never remain in chat after completion.
+
+Only the final result screen should remain.
+
+Cleanup must be reusable,
+generic,
+and shared across all Telegram workflows.
+
+Temporary message cleanup is best-effort only.
+Failure to delete temporary messages must never affect
+workflow completion or user-visible results.
+
+---
+
 # Development Checklist
 
 Before writing code ask yourself:

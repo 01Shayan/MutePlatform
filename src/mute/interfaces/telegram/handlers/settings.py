@@ -10,6 +10,7 @@ from ....core.logging import get_logger
 from ....services.settings import SettingsApplicationService, SettingsOperationError
 from ....services.workspace import WorkspaceApplicationService
 from ..auth import OwnerAuthorization
+from ..conversation import begin_temporary, cleanup_temporary, track_temporary
 from ..keyboards import cancel_keyboard, settings_keyboard, yes_no_keyboard
 from ..messages import (
     ask_bot_token,
@@ -60,6 +61,7 @@ def make_settings_handler(
             await query.answer()
             count = workspaces_service.clear_all_tokens()
             router.settings(chat.id)
+            await cleanup_temporary(context.bot, router, chat.id)
             await _safe_edit(
                 query,
                 f"{reset_tokens_success(count)}\n\n{settings()}",
@@ -67,6 +69,7 @@ def make_settings_handler(
             )
         elif data == "settings:reset-tokens-no":
             await query.answer()
+            await cleanup_temporary(context.bot, router, chat.id)
             await _show_settings(query, router, chat.id)
         elif data == "settings:bot-token":
             await query.answer()
@@ -78,12 +81,14 @@ def make_settings_handler(
             )
         elif data == "settings:bot-token-yes":
             await query.answer()
+            begin_temporary(router, chat.id)
             router.go_to(chat.id, Screen.SETTINGS_BOT_TOKEN_INPUT)
             if query.message is not None:
                 router.remember_message(chat.id, query.message.message_id)
             await _safe_edit(query, ask_bot_token(), cancel_keyboard("settings:cancel"))
         elif data == "settings:bot-token-no":
             await query.answer()
+            await cleanup_temporary(context.bot, router, chat.id)
             await _show_settings(query, router, chat.id)
         elif data == "settings:owner-ids":
             await query.answer()
@@ -95,15 +100,18 @@ def make_settings_handler(
             )
         elif data == "settings:owner-ids-yes":
             await query.answer()
+            begin_temporary(router, chat.id)
             router.go_to(chat.id, Screen.SETTINGS_OWNER_INPUT)
             if query.message is not None:
                 router.remember_message(chat.id, query.message.message_id)
             await _safe_edit(query, ask_owner_ids(), cancel_keyboard("settings:cancel"))
         elif data == "settings:owner-ids-no":
             await query.answer()
+            await cleanup_temporary(context.bot, router, chat.id)
             await _show_settings(query, router, chat.id)
         elif data == "settings:cancel":
             await query.answer()
+            await cleanup_temporary(context.bot, router, chat.id)
             await _show_settings(query, router, chat.id)
 
     return handle
@@ -128,10 +136,12 @@ def make_settings_text_handler(
             return False
 
         text = (update.effective_message.text or "").strip()
+        track_temporary(router, chat.id, update.effective_message.message_id)
         try:
             if session.current_screen is Screen.SETTINGS_BOT_TOKEN_INPUT:
                 settings_service.update_bot_token(text)
                 router.settings(chat.id)
+                await cleanup_temporary(context.bot, router, chat.id)
                 await _edit_or_reply(
                     context,
                     router,
@@ -143,6 +153,7 @@ def make_settings_text_handler(
             elif session.current_screen is Screen.SETTINGS_OWNER_INPUT:
                 owner_ids = settings_service.update_owner_ids(text)
                 router.settings(chat.id)
+                await cleanup_temporary(context.bot, router, chat.id)
                 await _edit_or_reply(
                     context,
                     router,
@@ -152,10 +163,12 @@ def make_settings_text_handler(
                     settings_keyboard(),
                 )
         except SettingsOperationError as exc:
-            await update.effective_message.reply_text(settings_error(str(exc)))
+            sent = await update.effective_message.reply_text(settings_error(str(exc)))
+            track_temporary(router, chat.id, sent.message_id)
         except Exception:  # noqa: BLE001 — surface a friendly message, log the detail
             logger.exception("Unexpected error during Telegram settings update")
-            await update.effective_message.reply_text(settings_error("Please try again."))
+            sent = await update.effective_message.reply_text(settings_error("Please try again."))
+            track_temporary(router, chat.id, sent.message_id)
         return True
 
     return handle
@@ -175,7 +188,7 @@ async def _edit_or_reply(context, router, chat_id, update, text, reply_markup) -
             )
             return
         except BadRequest:
-            pass
+            track_temporary(router, chat_id, message_id)
     sent = await update.effective_message.reply_text(text, reply_markup=reply_markup)
     router.remember_message(chat_id, sent.message_id)
 

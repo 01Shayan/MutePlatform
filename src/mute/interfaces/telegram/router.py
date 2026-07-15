@@ -90,3 +90,12 @@ class Router:
 
     def clear_draft(self, chat_id: int) -> TelegramSession:
         return self._sessions.clear_draft(chat_id)
+
+    def track_temporary(self, chat_id: int, message_id: int | None) -> TelegramSession:
+        return self._sessions.track_temporary(chat_id, message_id)
+
+    def clear_temporary(self, chat_id: int) -> TelegramSession:
+        return self._sessions.clear_temporary(chat_id)
+
+    def pop_temporary(self, chat_id: int) -> list[int]:
+        return self._sessions.pop_temporary(chat_id)

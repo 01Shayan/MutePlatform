@@ -40,7 +40,7 @@ def _service(tmp_path) -> WorkspaceApplicationService:
 
 
 def _make_context():
-    bot = SimpleNamespace(edit_message_text=AsyncMock())
+    bot = SimpleNamespace(edit_message_text=AsyncMock(), delete_message=AsyncMock())
     return SimpleNamespace(bot=bot, application=SimpleNamespace(bot_data={}))
 
 

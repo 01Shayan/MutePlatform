@@ -56,6 +56,7 @@ class TelegramSession:
     current_action: str | None = None
     last_message_id: int | None = None
     draft: dict = field(default_factory=dict)
+    temporary_messages: list[int] = field(default_factory=list)
 
 
 class SessionManager:
@@ -87,3 +88,22 @@ class SessionManager:
         session = self.get(chat_id)
         session.draft = {}
         return session
+
+    def track_temporary(self, chat_id: int, message_id: int | None) -> TelegramSession:
+        session = self.get(chat_id)
+        if message_id is None:
+            return session
+        if message_id not in session.temporary_messages:
+            session.temporary_messages.append(message_id)
+        return session
+
+    def clear_temporary(self, chat_id: int) -> TelegramSession:
+        session = self.get(chat_id)
+        session.temporary_messages = []
+        return session
+
+    def pop_temporary(self, chat_id: int) -> list[int]:
+        session = self.get(chat_id)
+        message_ids = list(session.temporary_messages)
+        session.temporary_messages = []
+        return message_ids

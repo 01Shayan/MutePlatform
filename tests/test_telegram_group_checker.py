@@ -59,7 +59,7 @@ def _write_backup(ws: Workspace, name: str, users: list[dict]) -> None:
 
 
 def _make_context():
-    bot = SimpleNamespace(edit_message_text=AsyncMock())
+    bot = SimpleNamespace(edit_message_text=AsyncMock(), delete_message=AsyncMock())
     return SimpleNamespace(bot=bot)
 
 
@@ -172,7 +172,7 @@ def test_text_handler_opens_confirmation(tmp_path):
     update = SimpleNamespace(
         effective_user=SimpleNamespace(id=OWNER_ID),
         effective_chat=SimpleNamespace(id=CHAT_ID),
-        effective_message=SimpleNamespace(text="1, 3", reply_text=reply),
+        effective_message=SimpleNamespace(text="1, 3", reply_text=reply, message_id=777),
         callback_query=None,
     )
     context = _make_context()
