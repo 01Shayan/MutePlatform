@@ -18,7 +18,7 @@ from telegram.ext import ContextTypes
 from ....core.logging import get_logger, use_workspace
 from ....core.workspace import Workspace
 from ....services.backup import BackupApplicationService, BackupOperationError
-from ....services.workspace import WorkspaceApplicationService
+from ....services.workspace import ConnectionStatus, WorkspaceApplicationService
 from ..auth import OwnerAuthorization
 from ..keyboards import (
     backup_back_keyboard,
@@ -189,13 +189,16 @@ async def _create_export(update, context, router: Router, service, workspace) ->
     try:
         summary = await asyncio.to_thread(service.create_export, workspace, bridge)
     except BackupOperationError as exc:
+        WorkspaceApplicationService.record_connection_status(workspace, ConnectionStatus.OFFLINE)
         await _safe_edit_message(context, chat_id, message_id, backup_error(str(exc)), backup_back_keyboard())
         return
     except Exception:  # noqa: BLE001 — surface a friendly message, log the detail
         logger.exception("Unexpected error during Telegram backup export")
+        WorkspaceApplicationService.record_connection_status(workspace, ConnectionStatus.OFFLINE)
         await _safe_edit_message(context, chat_id, message_id, backup_error(), backup_back_keyboard())
         return
 
+    WorkspaceApplicationService.record_connection_status(workspace, ConnectionStatus.CONNECTED)
     await _safe_edit_message(
         context, chat_id, message_id, backup_result(summary), backup_result_keyboard(summary.archive_name)
     )

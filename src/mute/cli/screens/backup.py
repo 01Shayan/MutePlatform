@@ -11,6 +11,7 @@ from rich.prompt import Prompt
 from ...core.timefmt import relative_time
 from ...core.workspace import Workspace
 from ...services.backup import BackupApplicationService, BackupOperationError, archive_display, format_duration, format_size
+from ...services.workspace import ConnectionStatus, WorkspaceApplicationService
 from .. import theme
 from ..job import Job, JobError, JobOutcome, ProgressReporter, run_job
 from ..theme import Icon
@@ -32,12 +33,20 @@ class BackupJob(Job):
 
     def prepare(self, workspace: Workspace) -> list[tuple[str, str]]:
         try:
-            return self._service.prepare_export(workspace)
+            rows = self._service.prepare_export(workspace)
         except BackupOperationError as exc:
+            WorkspaceApplicationService.record_connection_status(workspace, ConnectionStatus.OFFLINE)
             raise JobError(str(exc)) from exc
+        WorkspaceApplicationService.record_connection_status(workspace, ConnectionStatus.CONNECTED)
+        return rows
 
     def execute(self, workspace: Workspace, report: ProgressReporter) -> JobOutcome:
-        result = self._service.create_export(workspace, progress=report)
+        try:
+            result = self._service.create_export(workspace, progress=report)
+        except BackupOperationError:
+            WorkspaceApplicationService.record_connection_status(workspace, ConnectionStatus.OFFLINE)
+            raise
+        WorkspaceApplicationService.record_connection_status(workspace, ConnectionStatus.CONNECTED)
 
         rows = [
             ("Workspace", workspace.name),

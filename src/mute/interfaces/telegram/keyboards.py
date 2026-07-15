@@ -23,7 +23,7 @@ def home_keyboard() -> InlineKeyboardMarkup:
 
 def workspaces_keyboard(workspace_names: list[str]) -> InlineKeyboardMarkup:
     rows = [[(name, f"workspace:{name}")] for name in workspace_names]
-    rows.extend([[("Add Workspace", "future:add-workspace")], [("Back", "nav:back")]])
+    rows.extend([[("Add Workspace", "ws:add")], [("Back", "nav:back")]])
     return inline_keyboard(rows)
 
 
@@ -31,11 +31,61 @@ def dashboard_keyboard() -> InlineKeyboardMarkup:
     return inline_keyboard(
         [
             [("Backup", "backup:menu")],
-            [("Group Checker", "future:group-checker")],
+            [("Group Checker", "group_checker:menu")],
             [("Migration", "future:migration")],
-            [("Edit Workspace", "future:edit-workspace")],
-            [("Delete Workspace", "future:delete-workspace")],
+            [("Edit Workspace", "ws:edit")],
+            [("Delete Workspace", "ws:delete")],
             [("Back", "nav:back")],
+        ]
+    )
+
+
+def settings_keyboard() -> InlineKeyboardMarkup:
+    return inline_keyboard(
+        [
+            [("Reset Workspace Tokens", "settings:reset-tokens")],
+            [("Change Bot Token", "settings:bot-token")],
+            [("Change Owner IDs", "settings:owner-ids")],
+            [("Back", "nav:back")],
+        ]
+    )
+
+
+def yes_no_keyboard(yes_data: str, no_data: str) -> InlineKeyboardMarkup:
+    return inline_keyboard([[("Yes", yes_data), ("No", no_data)]])
+
+
+def cancel_keyboard(cancel_data: str) -> InlineKeyboardMarkup:
+    return inline_keyboard([[("Cancel", cancel_data)]])
+
+
+def integrations_keyboard(items: list[tuple[str, str, bool]]) -> InlineKeyboardMarkup:
+    """Build integration choices: ``(key, label, available)``."""
+    rows = []
+    for key, label, available in items:
+        if available:
+            rows.append([(label, f"ws:integration:{key}")])
+        else:
+            rows.append([(f"{label} (coming soon)", f"ws:integration-soon:{key}")])
+    rows.append([("Cancel", "ws:cancel")])
+    return inline_keyboard(rows)
+
+
+def auth_method_keyboard(*, cancel_data: str = "ws:cancel") -> InlineKeyboardMarkup:
+    return inline_keyboard(
+        [
+            [("Username / Password", "ws:auth:password")],
+            [("Bearer Token", "ws:auth:token")],
+            [("Cancel", cancel_data)],
+        ]
+    )
+
+
+def verify_ssl_keyboard(*, cancel_data: str = "ws:cancel") -> InlineKeyboardMarkup:
+    return inline_keyboard(
+        [
+            [("Yes", "ws:ssl:yes"), ("No", "ws:ssl:no")],
+            [("Cancel", cancel_data)],
         ]
     )
 
@@ -96,3 +146,38 @@ def backup_result_keyboard(archive_name: str) -> InlineKeyboardMarkup:
 def backup_back_keyboard() -> InlineKeyboardMarkup:
     """A lone Back button returning to the refreshed Backup page."""
     return inline_keyboard([[("Back", "backup:menu")]])
+
+
+def group_checker_menu_keyboard() -> InlineKeyboardMarkup:
+    return inline_keyboard(
+        [[("Run Query", "group_checker:run")], [("Back", "group_checker:dashboard")]]
+    )
+
+
+def group_checker_backups_keyboard(backup_names: list[str]) -> InlineKeyboardMarkup:
+    rows = [[(name, f"group_checker:backup:{name}")] for name in backup_names]
+    rows.append([("Back", "group_checker:menu")])
+    return inline_keyboard(rows)
+
+
+def group_checker_query_keyboard(backup_name: str) -> InlineKeyboardMarkup:
+    return inline_keyboard(
+        [
+            [("Required Groups", f"group_checker:query:{backup_name}")],
+            [("Back", "group_checker:run")],
+        ]
+    )
+
+
+def group_checker_confirm_keyboard() -> InlineKeyboardMarkup:
+    return inline_keyboard(
+        [[("Yes", "group_checker:confirm")], [("No", "group_checker:run")]]
+    )
+
+
+def group_checker_result_keyboard() -> InlineKeyboardMarkup:
+    return inline_keyboard([[("Back", "group_checker:menu")]])
+
+
+def group_checker_input_keyboard() -> InlineKeyboardMarkup:
+    return inline_keyboard([[("Cancel", "group_checker:run")]])

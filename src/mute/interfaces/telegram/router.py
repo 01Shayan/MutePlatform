@@ -62,5 +62,31 @@ class Router:
     def backup_delete_all_confirmation(self, chat_id: int) -> TelegramSession:
         return self.go_to(chat_id, Screen.BACKUP_DELETE_ALL_CONFIRM, action="delete-all")
 
+    def group_checker(self, chat_id: int) -> TelegramSession:
+        return self.go_to(chat_id, Screen.GROUP_CHECKER)
+
+    def group_checker_backup(self, chat_id: int) -> TelegramSession:
+        return self.go_to(chat_id, Screen.GROUP_CHECKER_BACKUP)
+
+    def group_checker_query(self, chat_id: int, backup_name: str) -> TelegramSession:
+        return self.go_to(chat_id, Screen.GROUP_CHECKER_QUERY, action=backup_name)
+
+    def group_checker_input(self, chat_id: int, backup_name: str) -> TelegramSession:
+        return self.go_to(chat_id, Screen.GROUP_CHECKER_INPUT, action=backup_name)
+
+    def group_checker_confirm(
+        self, chat_id: int, backup_name: str, group_ids: tuple[int, ...]
+    ) -> TelegramSession:
+        encoded = ",".join(str(value) for value in group_ids)
+        return self.go_to(
+            chat_id, Screen.GROUP_CHECKER_CONFIRM, action=f"{backup_name}|{encoded}"
+        )
+
+    def group_checker_result(self, chat_id: int) -> TelegramSession:
+        return self.go_to(chat_id, Screen.GROUP_CHECKER_RESULT)
+
     def remember_message(self, chat_id: int, message_id: int | None) -> TelegramSession:
         return self._sessions.remember_message(chat_id, message_id)
+
+    def clear_draft(self, chat_id: int) -> TelegramSession:
+        return self._sessions.clear_draft(chat_id)

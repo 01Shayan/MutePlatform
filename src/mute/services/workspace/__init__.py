@@ -1,5 +1,10 @@
 """Workspace application service."""
 
-from .service import WorkspaceApplicationService, WorkspaceNavigationItem
+from .service import ConnectionStatus, WorkspaceApplicationService, WorkspaceNavigationItem, WorkspaceOperationError
 
-__all__ = ["WorkspaceApplicationService", "WorkspaceNavigationItem"]
+__all__ = [
+    "ConnectionStatus",
+    "WorkspaceApplicationService",
+    "WorkspaceNavigationItem",
+    "WorkspaceOperationError",
+]

@@ -10,10 +10,10 @@ from rich.prompt import Confirm, Prompt
 from ...core.context import AppContext
 from ...core.integrations import integration_name
 from ...core.workspace import Workspace, WorkspaceStore
-from ...services.workspace import WorkspaceApplicationService
+from ...services.workspace import ConnectionStatus, WorkspaceApplicationService
 from .. import theme
 from ..theme import Icon, console
-from . import backup, placeholder, wsforms
+from . import backup, group_checker, placeholder, wsforms
 
 _TOOLS = [
     ("1", "Backup"),
@@ -27,11 +27,6 @@ _MANAGE = [
 ]
 
 _INTROS = {
-    "Group Checker": [
-        "Analyze user groups and memberships.",
-        "Find users missing required groups.",
-        "Generate clean reports.",
-    ],
     "Migration": [
         "Import users into a panel.",
         "Create users safely from a backup or SQL source.",
@@ -40,7 +35,7 @@ _INTROS = {
 
 
 def run(store: WorkspaceStore, app: AppContext, workspace: Workspace) -> None:
-    status = _probe_status(workspace)
+    status = _verify_and_status_label(workspace)
     while True:
         theme.page(
             workspace.name,
@@ -65,27 +60,31 @@ def run(store: WorkspaceStore, app: AppContext, workspace: Workspace) -> None:
             return
         if choice == "1":
             backup.run(workspace)
+            status = WorkspaceApplicationService.status_label(
+                WorkspaceApplicationService.connection_status(workspace)
+            )
         elif choice == "2":
-            placeholder.coming_soon(Icon.GROUPS, "Group Checker", _INTROS["Group Checker"])
+            group_checker.run(workspace)
         elif choice == "3":
             placeholder.coming_soon(Icon.MIGRATION, "Migration", _INTROS["Migration"])
         elif choice == "4":
             workspace = _edit_workspace(store, app, workspace)
-            status = _probe_status(workspace)
+            status = _verify_and_status_label(workspace)
         elif choice == "5":
             if _delete_workspace(store, app, workspace):
                 return
 
 
-def _probe_status(workspace: Workspace) -> str:
-    connected = f"Connected {Icon.SUCCESS}"
-    offline = f"Not connected {Icon.WARNING}"
+def _verify_and_status_label(workspace: Workspace) -> str:
+    """Probe the panel, persist the shared cache, then return the canonical label."""
     try:
         with console.status("[muted]Checking connection…[/muted]", spinner="dots"):
-            available = WorkspaceApplicationService.connection_is_available(workspace)
-        return connected if available else offline
+            WorkspaceApplicationService.connection_is_available(workspace)
     except Exception:  # noqa: BLE001 — UI feedback must never break the dashboard
-        return offline
+        WorkspaceApplicationService.record_connection_status(workspace, ConnectionStatus.OFFLINE)
+    return WorkspaceApplicationService.status_label(
+        WorkspaceApplicationService.connection_status(workspace)
+    )
 
 
 # -- Edit ---------------------------------------------------------------------------------

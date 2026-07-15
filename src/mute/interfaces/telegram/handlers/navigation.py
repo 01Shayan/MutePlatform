@@ -7,7 +7,7 @@ from telegram.ext import ContextTypes
 
 from ....services.workspace import WorkspaceApplicationService
 from ..auth import OwnerAuthorization
-from ..keyboards import back_keyboard, dashboard_keyboard, home_keyboard, workspaces_keyboard
+from ..keyboards import back_keyboard, dashboard_keyboard, home_keyboard, settings_keyboard, workspaces_keyboard
 from ..messages import about, coming_next_phase, dashboard, home, settings, workspaces
 from ..router import Router
 
@@ -33,7 +33,7 @@ def make_callback_handler(
         elif data == "nav:settings":
             await query.answer()
             router.settings(chat.id)
-            await query.edit_message_text(settings(), reply_markup=back_keyboard())
+            await query.edit_message_text(settings(), reply_markup=settings_keyboard())
         elif data == "nav:about":
             await query.answer()
             router.about(chat.id)

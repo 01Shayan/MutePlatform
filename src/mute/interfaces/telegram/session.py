@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
 
@@ -18,6 +18,35 @@ class Screen(str, Enum):
     BACKUP_DELETE_SINGLE = "backup-delete-single"
     BACKUP_DELETE_CONFIRM = "backup-delete-confirm"
     BACKUP_DELETE_ALL_CONFIRM = "backup-delete-all-confirm"
+    GROUP_CHECKER = "group-checker"
+    GROUP_CHECKER_BACKUP = "group-checker-backup"
+    GROUP_CHECKER_QUERY = "group-checker-query"
+    GROUP_CHECKER_INPUT = "group-checker-input"
+    GROUP_CHECKER_CONFIRM = "group-checker-confirm"
+    GROUP_CHECKER_RESULT = "group-checker-result"
+    WS_ADD_NAME = "ws-add-name"
+    WS_ADD_INTEGRATION = "ws-add-integration"
+    WS_ADD_URL = "ws-add-url"
+    WS_ADD_AUTH = "ws-add-auth"
+    WS_ADD_USERNAME = "ws-add-username"
+    WS_ADD_PASSWORD = "ws-add-password"
+    WS_ADD_TOKEN = "ws-add-token"
+    WS_ADD_SSL = "ws-add-ssl"
+    WS_ADD_CONFIRM = "ws-add-confirm"
+    WS_EDIT_NAME = "ws-edit-name"
+    WS_EDIT_URL = "ws-edit-url"
+    WS_EDIT_AUTH = "ws-edit-auth"
+    WS_EDIT_USERNAME = "ws-edit-username"
+    WS_EDIT_PASSWORD = "ws-edit-password"
+    WS_EDIT_TOKEN = "ws-edit-token"
+    WS_EDIT_SSL = "ws-edit-ssl"
+    WS_EDIT_CONFIRM = "ws-edit-confirm"
+    WS_DELETE_CONFIRM = "ws-delete-confirm"
+    SETTINGS_RESET_TOKENS_CONFIRM = "settings-reset-tokens-confirm"
+    SETTINGS_BOT_TOKEN_CONFIRM = "settings-bot-token-confirm"
+    SETTINGS_BOT_TOKEN_INPUT = "settings-bot-token-input"
+    SETTINGS_OWNER_CONFIRM = "settings-owner-confirm"
+    SETTINGS_OWNER_INPUT = "settings-owner-input"
 
 
 @dataclass
@@ -26,6 +55,7 @@ class TelegramSession:
     current_screen: Screen = Screen.HOME
     current_action: str | None = None
     last_message_id: int | None = None
+    draft: dict = field(default_factory=dict)
 
 
 class SessionManager:
@@ -51,4 +81,9 @@ class SessionManager:
     def remember_message(self, chat_id: int, message_id: int | None) -> TelegramSession:
         session = self.get(chat_id)
         session.last_message_id = message_id
+        return session
+
+    def clear_draft(self, chat_id: int) -> TelegramSession:
+        session = self.get(chat_id)
+        session.draft = {}
         return session

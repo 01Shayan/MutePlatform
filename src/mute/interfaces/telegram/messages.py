@@ -5,8 +5,9 @@ from __future__ import annotations
 from ...core.constants import APP_NAME
 from ...core.constants import DEVELOPER, GITHUB_URL, VERSION
 from ...core.timefmt import relative_time
-from ...services.workspace import WorkspaceNavigationItem
+from ...services.workspace import ConnectionStatus, WorkspaceApplicationService, WorkspaceNavigationItem
 from ...services.backup import BackupArchive, BackupSummary, archive_display, format_duration, format_size
+from ...services.group_checker import BackupSource, GroupCheckerResult, format_group_ids
 
 
 def home() -> str:
@@ -23,11 +24,18 @@ def workspaces(items: list[WorkspaceNavigationItem]) -> str:
 
 
 def dashboard(workspace: WorkspaceNavigationItem) -> str:
-    return f"{workspace.name}\n\nPanel: {workspace.panel}\nStatus: Not checked"
+    status = WorkspaceApplicationService.status_label(workspace.status)
+    return f"{workspace.name}\n\nPanel: {workspace.panel}\nStatus: {status}"
 
 
 def settings() -> str:
-    return "Settings\n\nApplication preferences.\nManage interface and future configuration.\n\nAppearance: Coming soon\nLanguage: Coming soon\nLogging: Coming soon\nBackup: Coming soon\nAdvanced: Coming soon"
+    return (
+        "Settings\n\n"
+        "Manage Telegram and workspace credentials.\n\n"
+        "1. Reset Workspace Tokens\n"
+        "2. Change Bot Token\n"
+        "3. Change Owner IDs"
+    )
 
 
 def about() -> str:
@@ -36,6 +44,10 @@ def about() -> str:
 
 def coming_next_phase() -> str:
     return "Coming in the next phase."
+
+
+def status_label(status: ConnectionStatus) -> str:
+    return WorkspaceApplicationService.status_label(status)
 
 
 def backup_status(latest, *, workspace: str) -> str:
@@ -101,3 +113,243 @@ def no_backups_to_delete() -> str:
 
 def friendly_error() -> str:
     return "Something went wrong. Please try again."
+
+
+def group_checker_menu(workspace: str) -> str:
+    return (
+        f"Group Checker — {workspace}\n\n"
+        "Analyze user groups from an existing backup.\n"
+        "Find users missing required groups — offline, no panel access."
+    )
+
+
+def group_checker_no_backups() -> str:
+    return "No backups have been created yet.\nCreate a backup first."
+
+
+def group_checker_select_backup(sources: list[BackupSource]) -> str:
+    lines = ["Select Backup", ""]
+    for index, source in enumerate(sources, start=1):
+        lines.append(f"{index}. {source.name} — {source.users} users · {source.size_label}")
+    return "\n".join(lines)
+
+
+def group_checker_select_query(backup_name: str) -> str:
+    return f"Select Query\n\nBackup: {backup_name}\n\n1. Required Groups"
+
+
+def group_checker_ask_group_ids(backup_name: str) -> str:
+    return (
+        f"Required Groups\n\n"
+        f"Backup: {backup_name}\n\n"
+        "Send the required group IDs as a message.\n"
+        "Example: 1, 3"
+    )
+
+
+def group_checker_confirmation(
+    workspace: str, backup_name: str, group_ids: tuple[int, ...], users: int
+) -> str:
+    return (
+        "Query Confirmation\n\n"
+        f"Workspace: {workspace}\n"
+        f"Backup: {backup_name}\n"
+        f"Query: Required Groups\n"
+        f"Required Groups: {format_group_ids(group_ids)}\n"
+        f"Users in Backup: {users}"
+    )
+
+
+def group_checker_progress(stage: str) -> str:
+    return f"Group Checker\n\n{stage}"
+
+
+def group_checker_result(result: GroupCheckerResult, *, limit: int = 30) -> str:
+    lines = [
+        "Query completed.",
+        "",
+        f"Backup: {result.backup_name}",
+        f"Query: {result.query_label}",
+        f"Required Groups: {format_group_ids(result.required_group_ids)}",
+        f"Total Users: {result.total_users}",
+        f"Matching Users: {result.matching_users}",
+        f"Duration: {format_duration(result.duration_seconds)}",
+        "",
+    ]
+    if not result.users:
+        lines.append("No users matched this query.")
+        return "\n".join(lines)
+
+    lines.append("Username | Current | Missing")
+    for row in result.users[:limit]:
+        lines.append(
+            f"{row.username} | {format_group_ids(row.current_group_ids)} | "
+            f"{format_group_ids(row.missing_group_ids)}"
+        )
+    if result.matching_users > limit:
+        lines.append("")
+        lines.append(f"Showing first {limit} of {result.matching_users} matching users.")
+    return "\n".join(lines)
+
+
+def group_checker_error(detail: str | None = None) -> str:
+    base = "Group Checker could not be completed."
+    return f"{base}\n\n{detail}" if detail else f"{base} Please try again."
+
+
+def group_checker_invalid_ids(detail: str) -> str:
+    return f"Invalid group IDs.\n\n{detail}\n\nSend the required group IDs again (e.g. 1, 3)."
+
+
+def ask_workspace_name(*, current: str | None = None) -> str:
+    if current:
+        return f"Edit Workspace\n\nCurrent name: {current}\n\nSend the new workspace name."
+    return "Add Workspace\n\nSend the workspace name."
+
+
+def ask_panel_url(*, current: str | None = None) -> str:
+    hint = f"\nCurrent URL: {current}" if current else ""
+    return f"Panel URL{hint}\n\nSend the panel base URL (https://…)."
+
+
+def ask_username(*, current: str | None = None) -> str:
+    hint = f"\nCurrent username: {current}" if current else ""
+    return f"Username{hint}\n\nSend the panel username."
+
+
+def ask_password(*, keep_allowed: bool = False) -> str:
+    note = "\nSend a dash (-) to keep the current password." if keep_allowed else ""
+    return f"Password{note}\n\nSend the panel password."
+
+
+def ask_token(*, keep_allowed: bool = False) -> str:
+    note = "\nSend a dash (-) to keep the current token." if keep_allowed else ""
+    return f"Bearer Token{note}\n\nSend the panel bearer token."
+
+
+def select_integration() -> str:
+    return "Select Integration\n\nChoose the panel technology for this workspace."
+
+
+def select_auth_method() -> str:
+    return "Authentication Method\n\n1. Username / Password\n2. Bearer Token"
+
+
+def select_verify_ssl(*, current: bool | None = None) -> str:
+    hint = ""
+    if current is not None:
+        hint = f"\nCurrent: {'Yes' if current else 'No'}"
+    return f"Verify TLS Certificate?{hint}"
+
+
+def workspace_confirmation(draft: dict, *, title: str = "Create Workspace") -> str:
+    auth = draft.get("auth", "password")
+    auth_label = "Username / Password" if auth == "password" else "Bearer Token"
+    lines = [
+        title,
+        "",
+        f"Name: {draft.get('name', '—')}",
+        f"Integration: {draft.get('integration_label', draft.get('integration', '—'))}",
+        f"URL: {draft.get('base_url', '—')}",
+        f"Authentication: {auth_label}",
+    ]
+    if auth == "password":
+        lines.append(f"Username: {draft.get('username') or '—'}")
+        lines.append(f"Password: {'••••••' if draft.get('password') else '—'}")
+    else:
+        lines.append(f"Token: {'••••••' if draft.get('token') else '—'}")
+    lines.append(f"Verify SSL: {'Yes' if draft.get('verify_ssl', True) else 'No'}")
+    if "probe_ok" in draft:
+        lines.append("")
+        lines.append("Connection: 🟢 Connected" if draft["probe_ok"] else "Connection: 🔴 Offline")
+    return "\n".join(lines)
+
+
+def workspace_created(name: str) -> str:
+    return f"Workspace '{name}' created successfully."
+
+
+def workspace_updated(name: str) -> str:
+    return f"Workspace '{name}' updated successfully."
+
+
+def workspace_deleted(name: str) -> str:
+    return f"Workspace '{name}' deleted successfully."
+
+
+def delete_workspace_confirmation(name: str) -> str:
+    return (
+        f"Delete Workspace\n\n"
+        f"Workspace: {name}\n\n"
+        "This action cannot be undone.\n\n"
+        "Are you sure?"
+    )
+
+
+def workspace_error(detail: str) -> str:
+    return f"Workspace operation failed.\n\n{detail}"
+
+
+def reset_tokens_confirmation() -> str:
+    return (
+        "Reset Workspace Tokens\n\n"
+        "This will remove all saved workspace tokens.\n\n"
+        "Workspace configuration,\n"
+        "passwords,\n"
+        "backups\n"
+        "and history\n"
+        "will remain.\n\n"
+        "Continue?"
+    )
+
+
+def reset_tokens_success(count: int) -> str:
+    return "Workspace tokens removed successfully."
+
+
+def change_bot_token_confirmation() -> str:
+    return (
+        "Change Bot Token\n\n"
+        "You will be asked for a new BOT_TOKEN.\n"
+        "Restart the bot after saving to apply the change.\n\n"
+        "Continue?"
+    )
+
+
+def ask_bot_token() -> str:
+    return "Change Bot Token\n\nSend the new Telegram bot token from @BotFather."
+
+
+def bot_token_updated() -> str:
+    return "Bot token updated successfully.\n\nRestart the bot to apply the changes."
+
+
+def change_owner_ids_confirmation() -> str:
+    return (
+        "Change Owner IDs\n\n"
+        "You will be asked for one or more Telegram owner IDs.\n"
+        "Restart the bot after saving to apply the change.\n\n"
+        "Continue?"
+    )
+
+
+def ask_owner_ids() -> str:
+    return (
+        "Change Owner IDs\n\n"
+        "Send one or more numeric Telegram user IDs.\n"
+        "Example: 123456789\n"
+        "Or: 123456789,987654321"
+    )
+
+
+def owner_ids_updated(owner_ids: list[int]) -> str:
+    joined = ", ".join(str(value) for value in owner_ids)
+    return f"Owner IDs updated successfully.\n\nOwner IDs: {joined}\n\nRestart the bot to apply the changes."
+
+
+def settings_error(detail: str) -> str:
+    return f"Settings update failed.\n\n{detail}"
+
+
+def verifying_connection() -> str:
+    return "Verifying connection…"
