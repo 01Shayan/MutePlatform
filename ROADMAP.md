@@ -73,7 +73,7 @@ Business analytics and insights.
 
 **Additional Integrations**
 
-Marzban · Hiddify · Xray and beyond.
+Marzban · Hiddify · Marzneshin and beyond.
 
 ---
 
@@ -93,7 +93,7 @@ prediction · customer segmentation · decision support for VPN operators.
 | PasarGuard | Released (v0.1.0) |
 | Marzban | Planned |
 | Hiddify | Planned |
-| Xray | Planned |
+| Marzneshin | Planned |
 
 > **Golden Rule:** Build only what we need today, but build it in a way that doesn't need
 > rewriting tomorrow.

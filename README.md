@@ -167,7 +167,7 @@ git pull
 | PasarGuard | Supported |
 | Marzban | Planned |
 | Hiddify | Planned |
-| Xray | Planned |
+| Marzneshin | Planned |
 
 ---
 
@@ -281,4 +281,3 @@ incrementally when ready.
 ## 📄 License
 
 [MIT](LICENSE)
-# MutePlatform

@@ -1,7 +1,7 @@
 """Supported integrations.
 
 Mute is a platform; an *integration* is one VPN panel technology (PasarGuard
-today; Marzban, Hiddify, Xray, … in the future). A workspace is bound to exactly one
+today; Marzban, Hiddify, Marzneshin, … in the future). A workspace is bound to exactly one
 integration, which determines the API implementation used at runtime.
 
 Adding a future integration is a one-line entry here plus its ``integrations/<key>/`` package.
@@ -24,7 +24,7 @@ INTEGRATIONS: tuple[Integration, ...] = (
     Integration(key="pasarguard", name="PasarGuard", icon="🛡", available=True),
     Integration(key="marzban", name="Marzban", icon="🟣"),
     Integration(key="hiddify", name="Hiddify", icon="🟢"),
-    Integration(key="xray", name="Xray", icon="⚡"),
+    Integration(key="Marzneshin", name="Marzneshin", icon="⚡"),
 )
 
 

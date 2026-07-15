@@ -22,7 +22,7 @@ def test_integrations_registry():
     assert integration_name("unknown") == "unknown"
     # Future integrations are registered but not yet available.
     keys = {it.key for it in list_integrations()}
-    assert {"pasarguard", "marzban", "hiddify", "xray"} <= keys
+    assert {"pasarguard", "marzban", "hiddify", "Marzneshin"} <= keys
 
 
 def test_context_defaults_and_open(tmp_path):
