@@ -4,7 +4,7 @@ Mute Platform is a **Decision Intelligence Platform** for VPN business managemen
 
 **Status legend:** Released · In Development · Planned
 
-Only the **Released** version is implemented. Everything else is planned or in-progress work.
+Only the **Released** versions are implemented. Everything else is planned or in-progress work.
 
 ---
 
@@ -33,6 +33,29 @@ Only the **Released** version is implemented. Everything else is planned or in-p
 - First-run Setup Wizard
 - Automatic configuration migration
 - Secrets kept out of JSON (`.env` only)
+
+---
+
+## v0.1.5.1 — Released
+
+**Patch Release**
+
+- Documentation and stability improvements on top of v0.1.5
+
+---
+
+## v0.1.6 — Released
+
+**Engineering Hardening**
+
+- Atomic JSON persistence
+- Workspace registry recovery
+- Workspace name validation
+- Telegram workspace logging
+- Unique history filenames
+- Crash-safe persistence and workspace rename consistency
+- Job lifecycle correctness
+- Logging consistency between CLI and Telegram
 
 ---
 

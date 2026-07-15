@@ -7,6 +7,33 @@ adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## v0.1.6
+
+**Released**
+
+### Added
+
+- Atomic JSON persistence
+- Workspace registry recovery
+- Workspace name validation
+- Telegram workspace logging
+- Unique history filenames
+
+### Improved
+
+- Crash-safe persistence
+- Workspace rename consistency
+- Job lifecycle correctness
+- Reliability of workspace storage
+- Logging consistency between CLI and Telegram
+
+### Notes
+
+- This release introduces no new user-facing features.
+- It focuses entirely on reliability, durability, and correctness before v0.2.0.
+
+---
+
 ## v0.1.5
 
 **Released**

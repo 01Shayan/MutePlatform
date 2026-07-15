@@ -2,7 +2,7 @@
 
 **Intelligent VPN Operations Platform**
 
-![Version](https://img.shields.io/badge/version-v0.1.5-blue)
+![Version](https://img.shields.io/badge/version-v0.1.6-blue)
 ![Status](https://img.shields.io/badge/status-stable-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
@@ -17,11 +17,20 @@ Platform**. PasarGuard is the first supported integration. Future modules are do
 
 ## 📌 Current Version
 
-**v0.1.5 — Released**
+**v0.1.6 — Released**
 
-Builds the Telegram interface and the installation experience on top of the frozen v0.1.0
-Workspace Foundation and Backup module. The core architecture, backup logic, and service layer
+Engineering hardening release before v0.2.0. Improves durability, reliability, and correctness
+without adding new user-facing features. The core architecture, backup logic, and service layer
 are unchanged.
+
+---
+
+## 🛡️ Reliability
+
+- JSON persistence is atomic — a failed write never corrupts an existing file.
+- The workspace registry automatically recovers from corruption by scanning on-disk manifests.
+- Workspace names are validated to prevent unsafe or colliding directories.
+- CLI and Telegram share the same workspace logging.
 
 ---
 
@@ -231,6 +240,10 @@ Configuration migrates automatically — no manual edits required.
 v0.1.0  Workspace Foundation · Backup                      Released
    ↓
 v0.1.5  Telegram Interface · Installation Experience       Released
+   ↓
+v0.1.5.1  Patch Release                                    Released
+   ↓
+v0.1.6  Engineering Hardening                              Released
    ↓
 v0.2.0  Group Checker                                      In Development
    ↓

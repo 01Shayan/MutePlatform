@@ -43,6 +43,22 @@ Tracks progress per version.
 
 ---
 
+## v0.1.6 — Engineering Hardening
+
+**Status:** Released
+
+- [x] Atomic JSON Persistence
+- [x] Workspace Registry Recovery
+- [x] Workspace Name Validation
+- [x] Telegram Workspace Logging
+- [x] Workspace Rename Consistency
+- [x] Job Lifecycle Cleanup
+- [x] Unique History Filenames
+- [x] Final Validation
+- [x] Release
+
+---
+
 ## Version 0.2 — Group Checker
 
 - [ ] Group Listing
