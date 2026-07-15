@@ -61,13 +61,30 @@ Tracks progress per version.
 
 ## Version 0.2 — Group Checker
 
-- [ ] Group Listing
-- [ ] User Count
-- [ ] Integrity Check
-- [ ] Invalid Groups
-- [ ] Empty Groups
-- [ ] Report Generation
-- [ ] Report History
-- [ ] Export
-- [ ] Tests
-- [ ] Documentation
+**Status:** Released
+
+- [x] Group Listing
+- [x] User Count
+- [x] Integrity Check
+- [x] Invalid Groups
+- [x] Empty Groups
+- [x] Report Generation
+- [x] Report History
+- [x] Export
+- [x] Tests
+- [x] Documentation
+
+---
+
+## v0.2.1 — Telegram Workspace Management
+
+**Status:** Released
+
+- [x] Telegram Add / Edit / Delete Workspace
+- [x] Cached connection status (shared CLI ↔ Telegram)
+- [x] Telegram Settings
+- [x] CLI Settings (mirror Telegram)
+- [x] Status label synchronization
+- [x] Tests
+- [x] Documentation
+- [x] Release Polish

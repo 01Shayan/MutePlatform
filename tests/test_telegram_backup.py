@@ -9,6 +9,7 @@ import pytest
 pytest.importorskip("telegram")
 
 from mute.core.workspace import Workspace
+from mute.services.workspace import ConnectionStatus
 from mute.interfaces.telegram.auth import OwnerAuthorization
 from mute.interfaces.telegram.handlers import backup as backup_handler_module
 from mute.interfaces.telegram.handlers.backup import make_backup_handler
@@ -30,7 +31,7 @@ class FakeWorkspaceService:
         return self._workspace if name == self._workspace.name else None
 
     def navigation_item(self, name):
-        return SimpleNamespace(name=name, panel="PasarGuard")
+        return SimpleNamespace(name=name, panel="PasarGuard", status=ConnectionStatus.UNKNOWN)
 
 
 def _make_workspace(tmp_path) -> Workspace:

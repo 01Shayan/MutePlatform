@@ -12,6 +12,7 @@ from mute.interfaces.telegram.auth import OwnerAuthorization
 from mute.interfaces.telegram.handlers.backup import make_backup_handler
 from mute.interfaces.telegram.router import Router
 from mute.interfaces.telegram.session import SessionManager
+from mute.services.workspace import ConnectionStatus
 
 CHAT_ID = 42
 OWNER_ID = 1
@@ -25,7 +26,7 @@ class FakeWorkspaceService:
         return self._workspace if name == self._workspace.name else None
 
     def navigation_item(self, name):
-        return SimpleNamespace(name=name, panel="PasarGuard")
+        return SimpleNamespace(name=name, panel="PasarGuard", status=ConnectionStatus.UNKNOWN)
 
 
 def _make_update(data):

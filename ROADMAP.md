@@ -59,12 +59,22 @@ Only the **Released** versions are implemented. Everything else is planned or in
 
 ---
 
-## v0.2.0 — In Development
+## v0.2.0 — Released
 
 **Group Checker**
 
 Read-only analysis · integrity reports · group listing · user counts · invalid and empty group
 detection · report generation, history, and export.
+
+---
+
+## v0.2.1 — Released
+
+**Telegram Workspace Management**
+
+- Telegram Add / Edit / Delete Workspace (mirrors CLI)
+- Cached workspace connection status
+- Telegram Settings (reset tokens, bot token, owner IDs)
 
 ---
 

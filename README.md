@@ -2,7 +2,7 @@
 
 **Intelligent VPN Operations Platform**
 
-![Version](https://img.shields.io/badge/version-v0.1.6-blue)
+![Version](https://img.shields.io/badge/version-v0.2.1-blue)
 ![Status](https://img.shields.io/badge/status-stable-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
@@ -17,11 +17,11 @@ Platform**. PasarGuard is the first supported integration. Future modules are do
 
 ## 📌 Current Version
 
-**v0.1.6 — Released**
+**v0.2.1 — Released**
 
-Engineering hardening release before v0.2.0. Improves durability, reliability, and correctness
-without adding new user-facing features. The core architecture, backup logic, and service layer
-are unchanged.
+Telegram Workspace Management Phase 1. Completes the Telegram interface for Add / Edit /
+Delete Workspace, cached connection status, and Settings (reset tokens, bot token, owner IDs).
+Telegram remains an exact mirror of the CLI with all business logic in the Service Layer.
 
 ---
 
@@ -324,7 +324,9 @@ v0.1.5.1  Patch Release                                    Released
    ↓
 v0.1.6  Engineering Hardening                              Released
    ↓
-v0.2.0  Group Checker                                      In Development
+v0.2.0  Group Checker                                      Released
+   ↓
+v0.2.1  Telegram Workspace Management                      Released
    ↓
 v0.3.0  Migration                                          Planned
    ↓
@@ -337,7 +339,7 @@ v0.6.0  Additional Integrations                            Planned
 v1.0.0  Stable Release                                     Planned
 ```
 
-See [ROADMAP.md](ROADMAP.md), [CHECKLIST.md](CHECKLIST.md), and [CHANGELOG.md](CHANGELOG.md).
+See [ARCHITECTURE.md](ARCHITECTURE.md), [ROADMAP.md](ROADMAP.md), [CHECKLIST.md](CHECKLIST.md), and [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
@@ -346,6 +348,7 @@ See [ROADMAP.md](ROADMAP.md), [CHECKLIST.md](CHECKLIST.md), and [CHANGELOG.md](C
 ```
 MutePlatform/
 ├── README.md
+├── ARCHITECTURE.md
 ├── ROADMAP.md
 ├── CHECKLIST.md
 ├── CHANGELOG.md

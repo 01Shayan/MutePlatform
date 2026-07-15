@@ -7,6 +7,34 @@ adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## v0.2.1
+
+**Released**
+
+### Added
+
+- Telegram Add Workspace wizard (mirrors CLI)
+- Telegram Edit Workspace
+- Telegram Delete Workspace with confirmation
+- Cached workspace connection status (Connected / Offline / Unknown)
+- Telegram Settings: Reset Workspace Tokens, Change Bot Token, Change Owner IDs
+- CLI Settings mirroring Telegram (same SettingsApplicationService)
+
+### Improved
+
+- Workspace dashboard status no longer shows "Not checked"
+- Telegram Workspace Management placeholders removed
+- CLI and Telegram share one connection-status cache and identical status labels
+- Successful/failed Backup connections update the shared status cache
+
+### Notes
+
+- Telegram remains a pure interface over the Service Layer.
+- Bot token and owner ID changes require a manual bot restart.
+- Connection status is cached; CLI verifies on dashboard open and persists the result for Telegram.
+
+---
+
 ## v0.1.6
 
 **Released**
