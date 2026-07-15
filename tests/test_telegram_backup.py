@@ -272,11 +272,13 @@ def test_create_export_edits_progress_stages_and_shows_result(tmp_path, monkeypa
     assert any("Loading users…" in t for t in texts)
     assert any("Writing backup…" in t for t in texts)
     assert any("Backup completed successfully." in t for t in texts)
-    # The final edit carries the single Download Backup button.
+    # Success screen: Download Backup + Back to workspace dashboard.
     final = context.bot.edit_message_text.await_args_list[-1]
-    button = final.kwargs["reply_markup"].inline_keyboard[0][0]
-    assert button.text == "Download Backup"
-    assert button.callback_data == f"backup:download:{summary.archive_name}"
+    rows = final.kwargs["reply_markup"].inline_keyboard
+    assert rows[0][0].text == "Download Backup"
+    assert rows[0][0].callback_data == f"backup:download:{summary.archive_name}"
+    assert rows[1][0].text == "Back"
+    assert rows[1][0].callback_data == "backup:dashboard"
     assert result.sessions.get(CHAT_ID).current_screen is Screen.BACKUP
 
 
@@ -305,4 +307,22 @@ def test_back_from_menu_returns_to_dashboard(tmp_path):
     result = _dispatch(tmp_path, "backup:dashboard")
 
     assert result.sessions.get(CHAT_ID).current_screen is Screen.DASHBOARD
+    assert result.sessions.get(CHAT_ID).current_workspace == result.ws.name
     result.query.edit_message_text.assert_awaited()
+    text = result.query.edit_message_text.await_args.args[0]
+    assert result.ws.name in text
+    markup = result.query.edit_message_text.await_args.kwargs["reply_markup"]
+    labels = [btn.text for row in markup.inline_keyboard for btn in row]
+    assert "Backup" in labels
+    assert "Group Checker" in labels
+
+
+def test_back_from_success_keyboard_uses_dashboard_callback():
+    from mute.interfaces.telegram.keyboards import backup_result_keyboard
+
+    markup = backup_result_keyboard("backup_2026-07-15_12-00-00.json")
+    rows = markup.inline_keyboard
+    assert rows[0][0].text == "Download Backup"
+    assert rows[0][0].callback_data == "backup:download:backup_2026-07-15_12-00-00.json"
+    assert rows[1][0].text == "Back"
+    assert rows[1][0].callback_data == "backup:dashboard"

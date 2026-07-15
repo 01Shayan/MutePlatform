@@ -139,8 +139,13 @@ def delete_all_confirm_keyboard() -> InlineKeyboardMarkup:
 
 
 def backup_result_keyboard(archive_name: str) -> InlineKeyboardMarkup:
-    """The completed-export screen offers the single Download Backup action."""
-    return inline_keyboard([[("Download Backup", f"backup:download:{archive_name}")]])
+    """Completed-export screen: optional download, or Back to the workspace dashboard."""
+    return inline_keyboard(
+        [
+            [("Download Backup", f"backup:download:{archive_name}")],
+            [("Back", "backup:dashboard")],
+        ]
+    )
 
 
 def backup_back_keyboard() -> InlineKeyboardMarkup:

@@ -460,6 +460,61 @@ Every release should be tested in production before beginning the next major fea
 
 ---
 
+## 47. Complete Workflows
+
+Every completed workflow must provide an explicit way back to its parent screen.
+
+A user should never become "stuck" on a result screen.
+
+Every workflow should naturally end with:
+
+Result
+
+↓
+
+Optional Action(s)
+(e.g. Download, Export)
+
+↓
+
+Back
+
+↓
+
+Parent Screen
+
+This rule applies to every interface:
+
+• CLI
+• Telegram
+• Future Web UI
+
+Examples:
+
+Backup
+Result
+→ Download
+→ Back
+
+Group Checker
+Result
+→ Export (future)
+→ Back
+
+Migration
+Summary
+→ Download Report (future)
+→ Back
+
+Reports
+View
+→ Export
+→ Back
+
+This rule is mandatory for all future features.
+
+---
+
 # Development Checklist
 
 Before writing code ask yourself:
