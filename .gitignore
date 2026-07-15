@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pycache/
+
+# Virtual Environments
+.venv/
+venv/
+env/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+# Logs
+logs/
+
+# Runtime Storage
+storage/
+workspaces/
+backups/
+output/
+reports/
+
+# Runtime Configuration
+config/settings.json
+config/workspaces.json
+config/profiles.json
+
+# Secrets
+.env
+.env.local
+
+# Build
+dist/
+build/
+*.egg-info/
+
+# Misc
+*.log
+
+# Python Packaging
+pip-wheel-metadata/
+
+# Type Checkers
+.mypy_cache/
+.pyre/
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/

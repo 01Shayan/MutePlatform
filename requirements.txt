@@ -1,0 +1,9 @@
+# Runtime dependencies
+rich>=13.7                     # CLI rendering
+requests>=2.32                # PasarGuard HTTP client
+python-dotenv>=1.0            # loads .env (BOT_TOKEN and workspace defaults)
+python-telegram-bot>=22.0,<23 # Telegram interface (polling)
+httpx>=0.27                   # async HTTP client used by python-telegram-bot
+
+# Test dependencies
+pytest>=8.0
