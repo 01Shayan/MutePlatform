@@ -124,13 +124,18 @@ not live APIs.
 
 ## 9. Backup is the Source of Truth
 
-Group Checker
+Groups
+  ├── Check
+  ├── Modify
+  └── History
 
 Reports
 
 Analytics
 
 must operate from backups whenever possible.
+
+Migration is a separate deferred domain (not part of the Groups module).
 
 ---
 
@@ -496,12 +501,15 @@ Result
 → Download
 → Back
 
-Group Checker
-Result
-→ Export (future)
-→ Back
+Groups
+  ├── Check
+  │     Result → Export (future) → Back
+  ├── Modify
+  │     Result → Back
+  └── History
+        View → Back
 
-Migration
+Migration (deferred — separate domain)
 Summary
 → Download Report (future)
 → Back

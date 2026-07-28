@@ -7,6 +7,23 @@ adheres to [Semantic Versioning](https://semver.org/).
 
 ---
 
+## v0.3.0 — In Development
+
+### Planned
+
+- Groups Foundation
+- Groups Check
+- Groups Modify
+- Groups History
+- Shared Group Operation Engine
+
+### Notes
+
+- Active development milestone after the stable v0.2.1 line.
+- Migration remains a separate deferred domain (not part of v0.3.0).
+
+---
+
 ## v0.2.1
 
 **Released**
@@ -19,6 +36,8 @@ adheres to [Semantic Versioning](https://semver.org/).
 - Cached workspace connection status (Connected / Offline / Unknown)
 - Telegram Settings: Reset Workspace Tokens, Change Bot Token, Change Owner IDs
 - CLI Settings mirroring Telegram (same SettingsApplicationService)
+- Telegram Backup History Archive Details (Download / Delete / Back)
+- Temporary Telegram conversation cleanup (best-effort)
 
 ### Improved
 
@@ -32,6 +51,7 @@ adheres to [Semantic Versioning](https://semver.org/).
 - Telegram remains a pure interface over the Service Layer.
 - Bot token and owner ID changes require a manual bot restart.
 - Connection status is cached; CLI verifies on dashboard open and persists the result for Telegram.
+- Stable release line before v0.3.0 Groups development.
 
 ---
 

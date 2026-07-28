@@ -2,8 +2,8 @@
 
 **Intelligent VPN Operations Platform**
 
-![Version](https://img.shields.io/badge/version-v0.2.1-blue)
-![Status](https://img.shields.io/badge/status-stable-brightgreen)
+![Version](https://img.shields.io/badge/version-0.3.0--dev-blue)
+![Status](https://img.shields.io/badge/status-development-yellow)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 An intelligent business platform for managing, analyzing, and growing VPN businesses
@@ -17,11 +17,13 @@ Platform**. PasarGuard is the first supported integration. Future modules are do
 
 ## 📌 Current Version
 
-**v0.2.1 — Released**
+**0.3.0-dev — Development**
 
-Telegram Workspace Management Phase 1. Completes the Telegram interface for Add / Edit /
-Delete Workspace, cached connection status, and Settings (reset tokens, bot token, owner IDs).
-Telegram remains an exact mirror of the CLI with all business logic in the Service Layer.
+**Status:** Development  
+**Next milestone:** Groups Module
+
+Active development after the stable v0.2.1 line. Focus is the Groups domain
+(Check · Modify · History) and a Shared Group Operation Engine. Migration remains deferred.
 
 ---
 
@@ -89,7 +91,7 @@ Interfaces
 ├── CLI
 │     Home
 │     ├── My Workspaces
-│     │     └── Workspace Dashboard → Backup · Group Checker · Migration
+│     │     └── Workspace Dashboard → Backup · Groups · Migration (deferred)
 │     ├── Settings
 │     └── About
 │
@@ -326,9 +328,11 @@ v0.1.6  Engineering Hardening                              Released
    ↓
 v0.2.0  Group Checker                                      Released
    ↓
-v0.2.1  Telegram Workspace Management                      Released
+v0.2.1  Telegram Workspace Management                      Stable
    ↓
-v0.3.0  Migration                                          Planned
+v0.3.0  Groups Module                                      In Development
+   ↓
+Migration                                                  Deferred
    ↓
 v0.4.0  Reports                                            Planned
    ↓
@@ -339,7 +343,8 @@ v0.6.0  Additional Integrations                            Planned
 v1.0.0  Stable Release                                     Planned
 ```
 
-See [ARCHITECTURE.md](ARCHITECTURE.md), [ROADMAP.md](ROADMAP.md), [CHECKLIST.md](CHECKLIST.md), and [CHANGELOG.md](CHANGELOG.md).
+See [ARCHITECTURE.md](ARCHITECTURE.md), [ROADMAP.md](ROADMAP.md), [CHECKLIST.md](CHECKLIST.md),
+[CHANGELOG.md](CHANGELOG.md), and [docs/PRODUCT.md](docs/PRODUCT.md).
 
 ---
 
@@ -347,6 +352,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md), [ROADMAP.md](ROADMAP.md), [CHECKLIST.md]
 
 ```
 MutePlatform/
+├── VERSION
 ├── README.md
 ├── ARCHITECTURE.md
 ├── ROADMAP.md
@@ -356,6 +362,8 @@ MutePlatform/
 ├── requirements.txt
 ├── .gitignore
 ├── .env.example
+├── docs/
+│   └── PRODUCT.md
 ├── deploy/
 │   └── systemd/
 ├── config/

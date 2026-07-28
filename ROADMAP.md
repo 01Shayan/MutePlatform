@@ -2,9 +2,10 @@
 
 Mute Platform is a **Decision Intelligence Platform** for VPN business management.
 
-**Status legend:** Released · In Development · Planned
+**Status legend:** Stable · Released · In Development · Planned · Deferred
 
-Only the **Released** versions are implemented. Everything else is planned or in-progress work.
+Only **Released** / **Stable** versions are implemented. Everything else is planned,
+in-progress, or deferred work.
 
 ---
 
@@ -68,21 +69,49 @@ detection · report generation, history, and export.
 
 ---
 
-## v0.2.1 — Released
+## v0.2.1 — Stable
 
 **Telegram Workspace Management**
 
 - Telegram Add / Edit / Delete Workspace (mirrors CLI)
 - Cached workspace connection status
 - Telegram Settings (reset tokens, bot token, owner IDs)
+- Backup History Archive Details
+- Temporary conversation cleanup
+
+Stable foundation for the next major milestone.
 
 ---
 
-## v0.3.0 — Planned
+## v0.3.0 — In Development
 
-**Migration**
+**Groups Module**
 
-Workspace-aware migration engine.
+Workspace-centric group operations domain:
+
+```
+Groups
+  ├── Check
+  ├── Modify
+  └── History
+```
+
+- Groups Foundation
+- Groups Check
+- Groups Modify
+- Groups History
+- Shared Group Operation Engine
+
+Offline-first where possible (backup as source of truth for analysis).
+Telegram mirrors CLI. Business logic stays in the Service Layer.
+
+---
+
+## Migration — Deferred
+
+**Migration** is a separate domain and is **deferred**.
+
+It is not part of v0.3.0. It will be scheduled after the Groups module is stable.
 
 ---
 
