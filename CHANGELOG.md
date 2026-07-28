@@ -9,6 +9,13 @@ adheres to [Semantic Versioning](https://semver.org/).
 
 ## v0.3.0 — In Development
 
+### Changed
+
+- Telegram Home now mirrors CLI branding (platform name, tagline, version, footer).
+- Backup JSON schema simplified by removing unused runtime fields
+  (`admin_id`, `on_hold_timeout`, `on_hold_expire_duration`, `next_plan`).
+- Backup schema version incremented to `0.2`.
+
 ### Planned
 
 - Groups Foundation

@@ -1,6 +1,7 @@
 """📦 Backup module.
 
-Exports panel **users** to a single timestamped JSON backup. The v0.1 format is frozen:
+Exports panel **users** to a single timestamped JSON backup. Current schema version
+is :data:`BACKUP_VERSION` (``0.2``):
 
     {
         "metadata": { ... },
@@ -50,11 +51,12 @@ DEFAULT_BACKUP_DIR = BACKUPS_DIR
 LATEST_FILENAME = "backup_latest.json"
 
 MANIFEST_VERSION = "1"
-BACKUP_VERSION = "0.1"
+BACKUP_VERSION = "0.2"
 BACKUP_TYPE = "users"
 INTEGRATION_NAME = DISPLAY_NAME
 
-# The exact, frozen set of fields kept for each user (order preserved in output).
+# The exact set of fields kept for each user (order preserved in output).
+# Runtime/panel-only fields (admin_id, on_hold_*, next_plan) are intentionally omitted.
 FIELDS: list[str] = [
     "id",
     "username",
@@ -62,15 +64,11 @@ FIELDS: list[str] = [
     "used_traffic",
     "data_limit",
     "created_at",
-    "admin_id",
     "data_limit_reset_strategy",
     "note",
     "edit_at",
     "expire",
     "group_ids",
-    "on_hold_timeout",
-    "on_hold_expire_duration",
-    "next_plan",
 ]
 
 # Sensitive / raw fields intentionally dropped to keep the backup a clean operational export.

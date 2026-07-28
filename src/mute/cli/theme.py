@@ -33,7 +33,7 @@ from rich.table import Table
 from rich.text import Text
 from rich.theme import Theme
 
-from ..core.constants import APP_NAME, COPYRIGHT, DEVELOPER, GITHUB_URL, TAGLINE, VERSION
+from ..core.constants import APP_NAME, COPYRIGHT, DEVELOPER, FOOTER_TEXT, GITHUB_URL, TAGLINE, VERSION
 
 __all__ = [
     "APP_NAME",
@@ -72,8 +72,6 @@ __all__ = [
 
 # -- identity -------------------------------------------------------------------------
 # Canonical values live in ``core.constants``; re-exported here as the UI entry point.
-
-FOOTER_TEXT = "Powered by 🧠 Mute"
 
 
 # -- palette --------------------------------------------------------------------------

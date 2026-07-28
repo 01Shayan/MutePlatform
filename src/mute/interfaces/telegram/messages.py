@@ -2,16 +2,39 @@
 
 from __future__ import annotations
 
-from ...core.constants import APP_NAME
-from ...core.constants import DEVELOPER, GITHUB_URL, VERSION
+from ...core.constants import APP_NAME, DEVELOPER, FOOTER_TEXT, GITHUB_URL, TAGLINE, VERSION
 from ...core.timefmt import relative_time
 from ...services.workspace import ConnectionStatus, WorkspaceApplicationService, WorkspaceNavigationItem
 from ...services.backup import BackupArchive, BackupSummary, archive_display, format_duration, format_size
 from ...services.group_checker import BackupSource, GroupCheckerResult, format_group_ids
 
+_HOME_DIVIDER = "--------------------------------"
+
 
 def home() -> str:
-    return "Home\n\n1. My Workspaces\n2. Settings\n3. About"
+    """Home screen text — mirrors the CLI brand banner, menu, and footer."""
+    return "\n".join(
+        [
+            f"🧠 {APP_NAME}",
+            "",
+            TAGLINE,
+            "",
+            "Current Version",
+            f"v{VERSION}",
+            "",
+            _HOME_DIVIDER,
+            "",
+            "Home",
+            "",
+            "1. My Workspaces",
+            "2. Settings",
+            "3. About",
+            "",
+            _HOME_DIVIDER,
+            "",
+            FOOTER_TEXT,
+        ]
+    )
 
 
 def workspaces(items: list[WorkspaceNavigationItem]) -> str:

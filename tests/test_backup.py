@@ -38,6 +38,8 @@ def _raw_user(i):
         "group_ids": [1, 3],
         "note": "n",
         "data_limit_reset_strategy": "no_reset",
+        # Runtime/panel-only fields — must not appear in the exported backup.
+        "admin_id": None,
         "on_hold_timeout": None,
         "on_hold_expire_duration": None,
         "next_plan": None,
@@ -106,6 +108,7 @@ def test_metadata_contents(tmp_path):
     assert meta["tool"] == "Mute"
     assert meta["integration"] == "PasarGuard"
     assert meta["manifest_version"] == "1"
+    assert meta["backup_version"] == "0.2"
     assert meta["panel_profile"] == "prod"
     assert meta["users_count"] == 2
     assert meta["fields"] == FIELDS
@@ -130,7 +133,9 @@ def test_user_object_is_whitelisted_and_ordered(tmp_path):
     assert list(user.keys()) == FIELDS  # exact set and order
     for secret in ("proxy_settings", "subscription_url", "admin", "lifetime_used_traffic"):
         assert secret not in user
-    assert user["admin_id"] is None  # present as key even though API omits it
+    for runtime in ("admin_id", "on_hold_timeout", "on_hold_expire_duration", "next_plan"):
+        assert runtime not in user
+
 
 
 def test_progress_hook_final_count(tmp_path):

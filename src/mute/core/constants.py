@@ -17,6 +17,7 @@ VERSION = __version__
 DEVELOPER = "01Shayan"
 GITHUB_URL = "https://github.com/01Shayan/MutePlatform"
 COPYRIGHT = f"© {datetime.now():%Y} {DEVELOPER}"
+FOOTER_TEXT = "Powered by 🧠 Mute"
 
 # Identity written into backup metadata — the short brand, kept stable across renames.
 TOOL_NAME = BRAND
