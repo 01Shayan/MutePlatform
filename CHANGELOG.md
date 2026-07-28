@@ -15,6 +15,9 @@ adheres to [Semantic Versioning](https://semver.org/).
 - Backup JSON schema simplified by removing unused runtime fields
   (`admin_id`, `on_hold_timeout`, `on_hold_expire_duration`, `next_plan`).
 - Backup schema version incremented to `0.2`.
+- Group Checker renamed to **Group Engine** (CLI + Telegram entry point).
+- Group Engine menu: Check · Add · Remove · Replace · History
+  (Add / Remove / Replace / History are Coming Soon placeholders).
 
 ### Planned
 

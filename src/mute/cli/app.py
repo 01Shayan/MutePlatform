@@ -2,7 +2,7 @@
 
 The platform is workspace-centric. Navigation hierarchy::
 
-    Home → Workspaces → (open) → Workspace Dashboard → Backup / Group Checker / Migration
+    Home → Workspaces → (open) → Workspace Dashboard → Backup / Group Engine / Migration
 
 The app always starts at Home. No module runs on its own; every action returns here when
 finished. Business logic lives in modules — this file only routes.

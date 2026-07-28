@@ -17,7 +17,7 @@ from . import backup, group_checker, placeholder, wsforms
 
 _TOOLS = [
     ("1", "Backup"),
-    ("2", "Group Checker"),
+    ("2", "Group Engine"),
     ("3", "Migration"),
 ]
 _MANAGE = [

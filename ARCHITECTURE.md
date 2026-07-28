@@ -40,6 +40,62 @@ not more complicated.
 
 ---
 
+# Engineering Principles
+
+These principles are architectural rules that every future feature must follow.
+
+## 1. CLI is the Source of Truth
+
+CLI defines the primary workflow.
+
+Telegram mirrors the CLI.
+
+UI differences are allowed only when required by platform limitations.
+
+## 2. Shared Service Layer
+
+Business logic never lives inside CLI or Telegram.
+
+Both interfaces use the same service layer.
+
+## 3. Preview Before Execute
+
+Every operation that modifies data must follow this flow:
+
+```
+Select
+→ Preview
+→ Confirmation
+→ Execute
+→ Summary
+```
+
+No write operation should bypass Preview or Confirmation.
+
+## 4. Read and Write Separation
+
+Read operations and write operations should remain clearly separated.
+
+Example:
+
+```
+Groups
+├── Check
+└── Modify
+```
+
+## 5. Shared Group Engine
+
+All future group modifications (Add, Remove, Replace, etc.) must use the same
+underlying engine instead of implementing separate logic.
+
+## 6. History
+
+Every successful write operation should be capable of producing an operation
+history record.
+
+---
+
 # Golden Rules
 
 ## 1. Telegram mirrors the CLI

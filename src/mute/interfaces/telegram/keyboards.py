@@ -31,7 +31,7 @@ def dashboard_keyboard() -> InlineKeyboardMarkup:
     return inline_keyboard(
         [
             [("Backup", "backup:menu")],
-            [("Group Checker", "group_checker:menu")],
+            [("Group Engine", "group_checker:menu")],
             [("Migration", "future:migration")],
             [("Edit Workspace", "ws:edit")],
             [("Delete Workspace", "ws:delete")],
@@ -169,9 +169,21 @@ def backup_back_keyboard() -> InlineKeyboardMarkup:
 
 
 def group_checker_menu_keyboard() -> InlineKeyboardMarkup:
+    """Group Engine menu — mirrors the CLI operation list."""
     return inline_keyboard(
-        [[("Run Query", "group_checker:run")], [("Back", "group_checker:dashboard")]]
+        [
+            [("Check", "group_checker:run")],
+            [("Add", "group_checker:soon:add")],
+            [("Remove", "group_checker:soon:remove")],
+            [("Replace", "group_checker:soon:replace")],
+            [("History", "group_checker:soon:history")],
+            [("Back", "group_checker:dashboard")],
+        ]
     )
+
+
+def group_checker_coming_soon_keyboard() -> InlineKeyboardMarkup:
+    return inline_keyboard([[("Back", "group_checker:menu")]])
 
 
 def group_checker_backups_keyboard(backup_names: list[str]) -> InlineKeyboardMarkup:

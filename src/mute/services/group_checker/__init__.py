@@ -1,4 +1,8 @@
-"""Group Checker application service — offline query engine over backup files."""
+"""Group Engine application service — offline group queries over backup files.
+
+The Check operation is implemented here today. Future write operations (Add,
+Remove, Replace) must share one engine behind this service boundary.
+"""
 
 from .models import (
     BackupSource,

@@ -1,4 +1,4 @@
-"""Group Checker DTOs — the only types interfaces may consume.
+"""Group Engine DTOs — the only types interfaces may consume.
 
 Engine-internal models (BackupUser, BackupSnapshot) stay inside the package and are never
 exported through the application service.

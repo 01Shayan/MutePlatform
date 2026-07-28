@@ -91,17 +91,14 @@ Interfaces
 ├── CLI
 │     Home
 │     ├── My Workspaces
-│     │     └── Workspace Dashboard → Backup · Groups · Migration (deferred)
+│     │     └── Workspace Dashboard → Backup · Group Engine · Migration (deferred)
 │     ├── Settings
 │     └── About
 │
 └── Telegram (owner-only)
       Home
       ├── My Workspaces
-      │     └── Workspace Dashboard → Backup
-      │            ├── Create Export
-      │            ├── Backup History
-      │            └── Delete Backup → Single · All
+      │     └── Workspace Dashboard → Backup · Group Engine · Migration (deferred)
       ├── Settings
       └── About
 

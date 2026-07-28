@@ -1,4 +1,4 @@
-"""Group Checker Telegram interface — pure interface over GroupCheckerApplicationService."""
+"""Group Engine Telegram interface — pure interface over GroupCheckerApplicationService."""
 
 from __future__ import annotations
 
@@ -23,6 +23,7 @@ from ..conversation import begin_temporary, cleanup_temporary, track_temporary
 from ..keyboards import (
     dashboard_keyboard,
     group_checker_backups_keyboard,
+    group_checker_coming_soon_keyboard,
     group_checker_confirm_keyboard,
     group_checker_input_keyboard,
     group_checker_menu_keyboard,
@@ -32,6 +33,7 @@ from ..keyboards import (
 from ..messages import (
     dashboard,
     group_checker_ask_group_ids,
+    group_checker_coming_soon,
     group_checker_confirmation,
     group_checker_error,
     group_checker_invalid_ids,
@@ -46,6 +48,8 @@ from ..router import Router
 from ..session import Screen
 
 logger = get_logger("telegram")
+
+_SOON_OPERATIONS = frozenset({"add", "remove", "replace", "history"})
 
 
 def make_group_checker_handler(
@@ -80,6 +84,16 @@ def make_group_checker_handler(
             router.dashboard(chat.id, workspace.name)
             item = workspaces_service.navigation_item(workspace.name)
             await _safe_edit(query, dashboard(item), dashboard_keyboard())
+        elif data.startswith("group_checker:soon:"):
+            await query.answer()
+            operation = data.removeprefix("group_checker:soon:")
+            if operation not in _SOON_OPERATIONS:
+                return
+            await _safe_edit(
+                query,
+                group_checker_coming_soon(operation),
+                group_checker_coming_soon_keyboard(),
+            )
         elif data == "group_checker:run":
             await query.answer()
             await cleanup_temporary(context.bot, router, chat.id)
@@ -232,7 +246,7 @@ async def _run_confirmed(update, context, router: Router, service, workspace, ch
         )
         return
     except Exception:  # noqa: BLE001 — surface a friendly message, log the detail
-        logger.exception("Unexpected error during Telegram group checker query")
+        logger.exception("Unexpected error during Telegram group engine check")
         router.group_checker(chat_id)
         await cleanup_temporary(context.bot, router, chat_id, keep=message_id)
         await _safe_edit_message(

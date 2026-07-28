@@ -1,4 +1,4 @@
-"""Telegram Group Checker interface tests."""
+"""Telegram Group Engine interface tests."""
 
 from __future__ import annotations
 
@@ -110,8 +110,20 @@ def test_menu_opens(tmp_path):
     result = _dispatch_callback(tmp_path, "group_checker:menu")
     assert result.sessions.get(CHAT_ID).current_screen is Screen.GROUP_CHECKER
     text = result.query.edit_message_text.await_args.args[0]
-    assert "Group Checker" in text
-    assert "offline" in text
+    assert "Group Engine" in text
+    assert "1. Check" in text
+    assert "5. History" in text
+    markup = result.query.edit_message_text.await_args.kwargs["reply_markup"]
+    labels = [button.text for row in markup.inline_keyboard for button in row]
+    assert labels == ["Check", "Add", "Remove", "Replace", "History", "Back"]
+
+
+def test_coming_soon_operations(tmp_path):
+    for operation in ("add", "remove", "replace", "history"):
+        result = _dispatch_callback(tmp_path, f"group_checker:soon:{operation}")
+        text = result.query.edit_message_text.await_args.args[0]
+        assert "Coming soon" in text
+        assert operation.capitalize() in text
 
 
 def test_run_with_no_backups(tmp_path):

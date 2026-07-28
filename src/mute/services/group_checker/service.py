@@ -22,7 +22,7 @@ logger = get_logger("group_checker")
 
 
 class GroupCheckerOperationError(Exception):
-    """A safe, interface-ready explanation of a Group Checker failure."""
+    """A safe, interface-ready explanation of a Group Engine failure."""
 
 
 class GroupCheckerApplicationService:

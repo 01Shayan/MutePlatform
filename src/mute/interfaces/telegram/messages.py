@@ -164,10 +164,36 @@ def friendly_error() -> str:
 
 def group_checker_menu(workspace: str) -> str:
     return (
-        f"Group Checker — {workspace}\n\n"
-        "Analyze user groups from an existing backup.\n"
-        "Find users missing required groups — offline, no panel access."
+        f"Group Engine — {workspace}\n\n"
+        "Central home for all group operations.\n"
+        "Check membership offline, or modify groups through one shared engine.\n\n"
+        "1. Check\n"
+        "2. Add\n"
+        "3. Remove\n"
+        "4. Replace\n"
+        "5. History"
     )
+
+
+def group_checker_coming_soon(operation: str) -> str:
+    descriptions = {
+        "add": (
+            "Add groups to selected users.\n"
+            "Will follow Select → Preview → Confirmation → Execute → Summary."
+        ),
+        "remove": (
+            "Remove groups from selected users.\n"
+            "Will follow Select → Preview → Confirmation → Execute → Summary."
+        ),
+        "replace": (
+            "Replace group membership for selected users.\n"
+            "Will follow Select → Preview → Confirmation → Execute → Summary."
+        ),
+        "history": "Review metadata for past group operations in this workspace.",
+    }
+    title = operation.capitalize()
+    body = descriptions.get(operation, "This operation is not available yet.")
+    return f"{title}\n\n{body}\n\nStatus: Coming soon"
 
 
 def group_checker_no_backups() -> str:
@@ -208,7 +234,7 @@ def group_checker_confirmation(
 
 
 def group_checker_progress(stage: str) -> str:
-    return f"Group Checker\n\n{stage}"
+    return f"Group Engine — Check\n\n{stage}"
 
 
 def group_checker_result(result: GroupCheckerResult, *, limit: int = 30) -> str:
@@ -240,7 +266,7 @@ def group_checker_result(result: GroupCheckerResult, *, limit: int = 30) -> str:
 
 
 def group_checker_error(detail: str | None = None) -> str:
-    base = "Group Checker could not be completed."
+    base = "Group Engine could not complete the check."
     return f"{base}\n\n{detail}" if detail else f"{base} Please try again."
 
 

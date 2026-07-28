@@ -1,4 +1,8 @@
-"""👥 Group Checker screen — offline Required Groups query over a workspace backup."""
+"""👥 Group Engine screen — central entry for all group operations.
+
+Check reuses the existing offline Required Groups query. Add / Remove / Replace /
+History are menu placeholders until the shared write workflow is implemented.
+"""
 
 from __future__ import annotations
 
@@ -18,22 +22,57 @@ from ...services.group_checker import (
 )
 from .. import theme
 from ..theme import Icon, console
+from . import placeholder
 
 _ACTIONS = [
-    ("1", "Run Query"),
+    ("1", "Check"),
+    ("2", "Add"),
+    ("3", "Remove"),
+    ("4", "Replace"),
+    ("5", "History"),
     ("0", "Back"),
 ]
+
+_COMING_SOON = {
+    "2": (
+        "Add",
+        [
+            "Add groups to selected users.",
+            "Will follow Select → Preview → Confirmation → Execute → Summary.",
+        ],
+    ),
+    "3": (
+        "Remove",
+        [
+            "Remove groups from selected users.",
+            "Will follow Select → Preview → Confirmation → Execute → Summary.",
+        ],
+    ),
+    "4": (
+        "Replace",
+        [
+            "Replace group membership for selected users.",
+            "Will follow Select → Preview → Confirmation → Execute → Summary.",
+        ],
+    ),
+    "5": (
+        "History",
+        [
+            "Review metadata for past group operations in this workspace.",
+        ],
+    ),
+}
 
 
 def run(workspace: Workspace) -> None:
     service = GroupCheckerApplicationService()
     while True:
         theme.page(
-            "Group Checker",
+            "Group Engine",
             theme.body_text(
                 [
-                    "Analyze user groups from an existing backup.",
-                    "Find users missing required groups — offline, no panel access.",
+                    "Central home for all group operations.",
+                    "Check membership offline, or modify groups through one shared engine.",
                 ]
             ),
             "",
@@ -49,10 +88,13 @@ def run(workspace: Workspace) -> None:
         if choice == "0":
             return
         if choice == "1":
-            _run_query_flow(service, workspace)
+            _run_check_flow(service, workspace)
+        elif choice in _COMING_SOON:
+            title, description = _COMING_SOON[choice]
+            placeholder.coming_soon(Icon.GROUPS, title, description)
 
 
-def _run_query_flow(service: GroupCheckerApplicationService, workspace: Workspace) -> None:
+def _run_check_flow(service: GroupCheckerApplicationService, workspace: Workspace) -> None:
     backup = _select_backup(service, workspace)
     if backup is None:
         return
@@ -104,15 +146,15 @@ def _run_query_flow(service: GroupCheckerApplicationService, workspace: Workspac
             )
     except GroupCheckerOperationError as exc:
         theme.page(
-            "Query — Failed",
-            theme.error_panel("Group Checker could not be completed", str(exc)),
+            "Check — Failed",
+            theme.error_panel("Group Engine could not complete the check", str(exc)),
             icon=Icon.GROUPS,
         )
         theme.pause()
         return
     except Exception as exc:  # noqa: BLE001 — show friendly message, log is in the service
         theme.page(
-            "Query — Failed",
+            "Check — Failed",
             theme.error_panel("An unexpected error occurred.", str(exc)),
             icon=Icon.GROUPS,
         )
@@ -190,10 +232,10 @@ def _show_result(result: GroupCheckerResult) -> None:
                 format_group_ids(row.current_group_ids),
                 format_group_ids(row.missing_group_ids),
             )
-        theme.page("Group Checker Result", summary, "", table, icon=Icon.GROUPS)
+        theme.page("Check Result", summary, "", table, icon=Icon.GROUPS)
     else:
         theme.page(
-            "Group Checker Result",
+            "Check Result",
             summary,
             "",
             theme.body_text(["No users matched this query."]),
