@@ -11,23 +11,31 @@ from ...core.context import AppContext
 from ...core.integrations import integration_name
 from ...core.workspace import Workspace, WorkspaceStore
 from ...services.workspace import ConnectionStatus, WorkspaceApplicationService
+from ...ui.copy import (
+    BTN_BACK,
+    MENU_BACKUP,
+    MENU_BULK_OPS,
+    MENU_DELETE_WORKSPACE,
+    MENU_EDIT_WORKSPACE,
+    MENU_MIGRATION,
+)
 from .. import theme
 from ..theme import Icon, console
 from . import backup, bulk_operations, placeholder, wsforms
 
 _TOOLS = [
-    ("1", "Backup"),
-    ("2", "Bulk Operations"),
-    ("3", "Migration"),
+    ("1", MENU_BACKUP),
+    ("2", MENU_BULK_OPS),
+    ("3", MENU_MIGRATION),
 ]
 _MANAGE = [
-    ("4", "Edit Workspace"),
-    ("5", "Delete Workspace"),
-    ("0", "Back"),
+    ("4", MENU_EDIT_WORKSPACE),
+    ("5", MENU_DELETE_WORKSPACE),
+    ("0", BTN_BACK),
 ]
 
 _INTROS = {
-    "Migration": [
+    MENU_MIGRATION: [
         "Import users into a panel.",
         "Create users safely from a backup or SQL source.",
     ],
@@ -66,7 +74,7 @@ def run(store: WorkspaceStore, app: AppContext, workspace: Workspace) -> None:
         elif choice == "2":
             bulk_operations.run(workspace)
         elif choice == "3":
-            placeholder.coming_soon(Icon.MIGRATION, "Migration", _INTROS["Migration"])
+            placeholder.coming_soon(Icon.MIGRATION, MENU_MIGRATION, _INTROS[MENU_MIGRATION])
         elif choice == "4":
             workspace = _edit_workspace(store, app, workspace)
             status = _verify_and_status_label(workspace)

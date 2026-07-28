@@ -34,6 +34,7 @@ from rich.text import Text
 from rich.theme import Theme
 
 from ..core.constants import APP_NAME, COPYRIGHT, DEVELOPER, FOOTER_TEXT, GITHUB_URL, TAGLINE, VERSION
+from ..ui.icons import Icon
 
 __all__ = [
     "APP_NAME",
@@ -101,34 +102,7 @@ THEME = Theme(
 console = Console(theme=THEME)
 
 
-class Icon:
-    """Canonical emoji set (the project's emoji standard)."""
-
-    BRAIN = "🧠"
-    BACKUP = "📦"
-    MIGRATION = "🚚"
-    GROUPS = "👥"
-    REPORTS = "📊"
-    ANALYTICS = "📈"
-    MARKETING = "🎯"
-    CAMPAIGN = "🎁"
-    SETTINGS = "⚙️"
-    PROFILE = "👤"
-    API = "🌐"
-    SEARCH = "🔍"
-    EXPORT = "💾"
-    IMPORT = "📥"
-    RESTORE = "♻️"
-    SUCCESS = "✅"
-    ERROR = "❌"
-    WARNING = "⚠️"
-    INFO = "ℹ️"
-    PENDING = "⏳"
-    PANELS = "🏢"
-    WORKSPACES = "💼"
-    SHIELD = "🛡"
-    FOLDER = "📂"
-    DELETE = "🗑️"
+# Icon is imported from mute.ui.icons (Design System).
 
 
 # -- structural pieces ----------------------------------------------------------------
@@ -170,9 +144,25 @@ def section(title: str, icon: str | None = None) -> Rule:
 
 
 def page_header(title: str, icon: str | None = None) -> Group:
-    """A compact page title: bold-white heading over a thin muted rule."""
-    label = f"{icon}  {title}" if icon else title
+    """A compact page title: bold-white heading over a thin muted rule.
+
+    If ``title`` already starts with an emoji (Design System titles), ``icon`` is ignored
+    to avoid double-emoji headers.
+    """
+    if icon and not _title_has_leading_emoji(title):
+        label = f"{icon}  {title}"
+    else:
+        label = title
     return Group(Text(label, style="heading"), Rule(style="muted"))
+
+
+def _title_has_leading_emoji(title: str) -> bool:
+    stripped = title.lstrip()
+    if not stripped:
+        return False
+    # Emoji / symbol ranges commonly used by the Design System.
+    code = ord(stripped[0])
+    return code > 0x2000
 
 
 def page(

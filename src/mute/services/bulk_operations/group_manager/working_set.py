@@ -1,57 +1,31 @@
-"""Working Set — the only user set Actions may consume.
-
-Produced exclusively by Check. Never built by manual selection.
-"""
+"""Working Set — Query result held in memory for Actions."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from typing import TYPE_CHECKING
 
-
-@dataclass(frozen=True)
-class CheckCriteria:
-    """Search criteria that produced this Working Set."""
-
-    query_type: str
-    query_label: str
-    required_group_ids: tuple[int, ...]
+if TYPE_CHECKING:
+    from .query import GroupQuery
 
 
 @dataclass(frozen=True)
 class WorkingSetUser:
-    """One user projected into the Working Set."""
-
     username: str
-    current_group_ids: tuple[int, ...]
-    missing_group_ids: tuple[int, ...] = ()
+    group_ids: tuple[int, ...]
 
 
 @dataclass(frozen=True)
 class WorkingSet:
-    """Immutable Check outcome: matched / unmatched users plus statistics and criteria."""
+    """Matched users from the latest Query. Regenerated when Query changes."""
 
-    workspace: str
-    backup_name: str
-    backup_created_at: datetime
-    criteria: CheckCriteria
-    matched_users: tuple[WorkingSetUser, ...]
-    unmatched_users: tuple[WorkingSetUser, ...]
-    total_users: int
-    duration_seconds: float
+    users: tuple[WorkingSetUser, ...]
+    query: "GroupQuery"
+    total_in_snapshot: int
 
     @property
-    def matched_count(self) -> int:
-        return len(self.matched_users)
+    def matched(self) -> int:
+        return len(self.users)
 
-    @property
-    def unmatched_count(self) -> int:
-        return len(self.unmatched_users)
-
-    @property
-    def required_group_ids(self) -> tuple[int, ...]:
-        return self.criteria.required_group_ids
-
-    @property
-    def query_label(self) -> str:
-        return self.criteria.query_label
+    def usernames(self) -> tuple[str, ...]:
+        return tuple(user.username for user in self.users)

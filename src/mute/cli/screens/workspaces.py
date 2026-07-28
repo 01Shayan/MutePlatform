@@ -12,6 +12,7 @@ from ...core.context import AppContext
 from ...core.integrations import integration_name
 from ...core.workspace import Workspace, WorkspaceStore
 from ...services.workspace import WorkspaceApplicationService
+from ...ui.copy import BTN_BACK, MENU_ADD_WORKSPACE, MENU_MY_WORKSPACES
 from .. import theme
 from . import dashboard, wsforms
 
@@ -26,7 +27,7 @@ def run(store: WorkspaceStore, app: AppContext) -> None:
             (str(i), ws.name, integration_name(ws.integration))
             for i, ws in enumerate(workspaces, start=1)
         ]
-        action_items = [(add_key, "Add Workspace"), ("0", "Back")]
+        action_items = [(add_key, MENU_ADD_WORKSPACE), ("0", BTN_BACK)]
 
         body = []
         if ws_items:
@@ -36,7 +37,7 @@ def run(store: WorkspaceStore, app: AppContext) -> None:
             body.append(theme.body_text(["No workspaces yet. Choose Add Workspace to begin."]))
             body.append("")
         body.append(theme.option_menu(action_items))
-        theme.page("My Workspaces", *body)
+        theme.page(MENU_MY_WORKSPACES, *body)
 
         choices = [str(i) for i in range(1, len(workspaces) + 1)] + [add_key, "0"]
         choice = Prompt.ask(

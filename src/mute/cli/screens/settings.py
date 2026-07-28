@@ -6,34 +6,41 @@ from rich.prompt import Prompt
 
 from ...services.settings import SettingsApplicationService, SettingsOperationError
 from ...services.workspace import WorkspaceApplicationService
+from ...ui.copy import (
+    BTN_BACK,
+    MENU_CHANGE_BOT_TOKEN,
+    MENU_CHANGE_OWNER_IDS,
+    MENU_RESET_TOKENS,
+    SETTINGS_INTRO,
+    TITLE_SETTINGS,
+)
 from .. import theme
 from ..theme import Icon
 
 
 _ACTIONS = [
-    ("1", "Reset Workspace Tokens"),
-    ("2", "Change Bot Token"),
-    ("3", "Change Owner IDs"),
-    ("0", "Back"),
+    ("1", MENU_RESET_TOKENS),
+    ("2", MENU_CHANGE_BOT_TOKEN),
+    ("3", MENU_CHANGE_OWNER_IDS),
+    ("0", BTN_BACK),
 ]
 
 
 def show() -> None:
     while True:
         theme.page(
-            "Settings",
+            TITLE_SETTINGS,
             theme.body_text(
                 [
-                    "Manage Telegram and workspace credentials.",
+                    SETTINGS_INTRO,
                     "",
-                    "1. Reset Workspace Tokens",
-                    "2. Change Bot Token",
-                    "3. Change Owner IDs",
+                    f"1. {MENU_RESET_TOKENS}",
+                    f"2. {MENU_CHANGE_BOT_TOKEN}",
+                    f"3. {MENU_CHANGE_OWNER_IDS}",
                 ]
             ),
             "",
             theme.option_menu(_ACTIONS),
-            icon=Icon.SETTINGS,
         )
         choice = Prompt.ask(
             "\nSelect an option",

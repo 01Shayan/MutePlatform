@@ -43,6 +43,9 @@ class Connection(Protocol):
 TOKEN_PATH = "/api/admin/token"
 CURRENT_ADMIN_PATH = "/api/admin"
 USERS_PATH = "/api/users"
+USER_PATH = "/api/user"
+GROUPS_PATH = "/api/groups"
+GROUPS_SIMPLE_PATH = "/api/groups/simple"
 
 _CLOCK_SKEW_SECONDS = 30
 _DEFAULT_PAGE_SIZE = 100
@@ -220,6 +223,28 @@ class PasarGuardClient:
             if len(batch) < page_size:
                 break
             offset += page_size
+
+    def get_groups_simple(self, *, all_groups: bool = True) -> list[dict]:
+        """Return lightweight group rows ``{id, name}`` for menus (no filtering of users)."""
+        params: dict[str, Any] = {}
+        if all_groups:
+            params["all"] = "true"
+        payload = self._request("GET", GROUPS_SIMPLE_PATH, params=params or None)
+        if isinstance(payload, dict):
+            groups = payload.get("groups", [])
+            return list(groups) if isinstance(groups, list) else []
+        if isinstance(payload, list):
+            return payload
+        return []
+
+    def modify_user(self, username: str, *, group_ids: list[int] | None = None) -> dict:
+        """Update a user. Currently used to set ``group_ids`` for Group Manager actions."""
+        body: dict[str, Any] = {}
+        if group_ids is not None:
+            body["group_ids"] = list(group_ids)
+        if not body:
+            raise ValueError("modify_user requires at least one field to update.")
+        return self._request("PUT", f"{USER_PATH}/{username}", json_body=body)
 
 
 def create_client(conn: Connection, *, timeout: float = 30.0) -> PasarGuardClient:

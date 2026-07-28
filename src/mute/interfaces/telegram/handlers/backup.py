@@ -19,6 +19,7 @@ from ....core.logging import get_logger, use_workspace
 from ....core.workspace import Workspace
 from ....services.backup import BackupApplicationService, BackupOperationError
 from ....services.workspace import ConnectionStatus, WorkspaceApplicationService
+from ....ui.copy import MSG_BACKUP_LOADING_USERS, MSG_BACKUP_WRITING
 from ..auth import OwnerAuthorization
 from ..conversation import begin_temporary, cleanup_temporary
 from ..keyboards import (
@@ -308,7 +309,7 @@ class _ProgressBridge:
         self._last_stage: str | None = None
 
     def __call__(self, message: str, completed: int, total: int) -> None:
-        stage = "Writing backup…" if total and completed >= total else "Loading users…"
+        stage = MSG_BACKUP_WRITING if total and completed >= total else MSG_BACKUP_LOADING_USERS
         if stage == self._last_stage:
             return
         self._last_stage = stage

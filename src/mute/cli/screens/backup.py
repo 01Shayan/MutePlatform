@@ -12,6 +12,15 @@ from ...core.timefmt import relative_time
 from ...core.workspace import Workspace
 from ...services.backup import BackupApplicationService, BackupOperationError, archive_display, format_duration, format_size
 from ...services.workspace import ConnectionStatus, WorkspaceApplicationService
+from ...ui.copy import (
+    BTN_BACK,
+    MENU_BACKUP_HISTORY,
+    MENU_CREATE_EXPORT,
+    MENU_DELETE_ALL,
+    MENU_DELETE_BACKUP,
+    MENU_DELETE_SINGLE,
+    TITLE_BACKUP,
+)
 from .. import theme
 from ..job import Job, JobError, JobOutcome, ProgressReporter, run_job
 from ..theme import Icon
@@ -19,7 +28,7 @@ from ..theme import Icon
 
 class BackupJob(Job):
     icon = Icon.BACKUP
-    title = "Backup"
+    title = TITLE_BACKUP
     action = "Export"
     prepare_message = "Connecting…"
     description = [
@@ -64,16 +73,16 @@ class BackupJob(Job):
 
 
 _ACTIONS = [
-    ("1", "Create Export"),
-    ("2", "Backup History"),
-    ("3", "Delete Backup"),
-    ("0", "Back"),
+    ("1", MENU_CREATE_EXPORT),
+    ("2", MENU_BACKUP_HISTORY),
+    ("3", MENU_DELETE_BACKUP),
+    ("0", BTN_BACK),
 ]
 
 _DELETE_MENU = [
-    ("1", "Delete Single Backup"),
-    ("2", "Delete All Backups"),
-    ("0", "Back"),
+    ("1", MENU_DELETE_SINGLE),
+    ("2", MENU_DELETE_ALL),
+    ("0", BTN_BACK),
 ]
 
 
@@ -89,11 +98,11 @@ def _history_items(workspace: Workspace) -> list[tuple]:
 def _browse_backups(workspace: Workspace) -> None:
     items = _history_items(workspace)
     if not items:
-        theme.page("Backup History", theme.body_text(["No backups have been created yet."]))
+        theme.page(MENU_BACKUP_HISTORY, theme.body_text(["No backups have been created yet."]))
         theme.pause()
         return
 
-    theme.page("Backup History", theme.history_menu([*items, ("0", "Back")]))
+    theme.page(MENU_BACKUP_HISTORY, theme.history_menu([*items, ("0", BTN_BACK)]))
     Prompt.ask(
         "\nSelect an option",
         choices=[item[0] for item in items] + ["0"],
@@ -118,7 +127,7 @@ def _delete_single_backup(workspace: Workspace) -> None:
         return
 
     items = _history_items(workspace)
-    theme.page("Delete Backup", theme.history_menu([*items, ("0", "Back")]))
+    theme.page(MENU_DELETE_BACKUP, theme.history_menu([*items, ("0", BTN_BACK)]))
     choices = [item[0] for item in items] + ["0"]
     choice = Prompt.ask(
         "\nSelect a backup to delete",
@@ -152,7 +161,7 @@ def _delete_single_backup(workspace: Workspace) -> None:
 
 def _delete_menu(workspace: Workspace) -> None:
     while True:
-        theme.page("Delete Backup", theme.option_menu(_DELETE_MENU))
+        theme.page(MENU_DELETE_BACKUP, theme.option_menu(_DELETE_MENU))
         choice = Prompt.ask(
             "\nSelect an option",
             choices=[item[0] for item in _DELETE_MENU],
@@ -218,7 +227,7 @@ def _status_panel(workspace: Workspace):
 def run(workspace: Workspace) -> None:
     while True:
         theme.page(
-            "Backup",
+            TITLE_BACKUP,
             _status_panel(workspace),
             "",
             theme.option_menu(_ACTIONS),

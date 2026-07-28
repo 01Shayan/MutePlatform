@@ -1,11 +1,46 @@
-"""Reusable Telegram keyboard builders.
-
-Feature-specific buttons belong in later phases; this module owns their construction.
-"""
+"""Reusable Telegram keyboard builders — labels from the Design System (mirrors CLI)."""
 
 from __future__ import annotations
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+
+from ...ui.copy import (
+    BTN_BACK,
+    BTN_CANCEL,
+    BTN_CONFIRM,
+    BTN_DOWNLOAD_REPORT,
+    BTN_NO,
+    BTN_YES,
+    MENU_ABOUT,
+    MENU_ADD_WORKSPACE,
+    MENU_BACKUP,
+    MENU_BACKUP_HISTORY,
+    MENU_BULK_OPS,
+    MENU_CHANGE_BOT_TOKEN,
+    MENU_CHANGE_OWNER_IDS,
+    MENU_CREATE_EXPORT,
+    MENU_DELETE_ALL,
+    MENU_DELETE_BACKUP,
+    MENU_DELETE_SINGLE,
+    MENU_DELETE_WORKSPACE,
+    MENU_DOWNLOAD_BACKUP,
+    MENU_EDIT_WORKSPACE,
+    MENU_GROUP_MANAGER,
+    MENU_MIGRATION,
+    MENU_MY_WORKSPACES,
+    MENU_REFRESH_SNAPSHOT,
+    MENU_RESET_TOKENS,
+    MENU_SELECT_TARGET,
+    MENU_SETTINGS,
+    MENU_VIEW_MATCHED,
+    TARGET_ADD_RULE,
+    TARGET_ALL_USERS,
+    TARGET_CONTINUE,
+    TARGET_REQUIRE_ALL,
+    TARGET_REQUIRE_ANY,
+    TARGET_WITH_GROUPS,
+    TARGET_WITHOUT_GROUPS,
+)
 
 
 def inline_keyboard(rows: list[list[tuple[str, str]]]) -> InlineKeyboardMarkup:
@@ -17,25 +52,29 @@ def inline_keyboard(rows: list[list[tuple[str, str]]]) -> InlineKeyboardMarkup:
 
 def home_keyboard() -> InlineKeyboardMarkup:
     return inline_keyboard(
-        [[("My Workspaces", "nav:workspaces")], [("Settings", "nav:settings")], [("About", "nav:about")]]
+        [
+            [(MENU_MY_WORKSPACES, "nav:workspaces")],
+            [(MENU_SETTINGS, "nav:settings")],
+            [(MENU_ABOUT, "nav:about")],
+        ]
     )
 
 
 def workspaces_keyboard(workspace_names: list[str]) -> InlineKeyboardMarkup:
     rows = [[(name, f"workspace:{name}")] for name in workspace_names]
-    rows.extend([[("Add Workspace", "ws:add")], [("Back", "nav:back")]])
+    rows.extend([[(MENU_ADD_WORKSPACE, "ws:add")], [(BTN_BACK, "nav:back")]])
     return inline_keyboard(rows)
 
 
 def dashboard_keyboard() -> InlineKeyboardMarkup:
     return inline_keyboard(
         [
-            [("Backup", "backup:menu")],
-            [("Bulk Operations", "bulk:menu")],
-            [("Migration", "future:migration")],
-            [("Edit Workspace", "ws:edit")],
-            [("Delete Workspace", "ws:delete")],
-            [("Back", "nav:back")],
+            [(MENU_BACKUP, "backup:menu")],
+            [(MENU_BULK_OPS, "bulk:menu")],
+            [(MENU_MIGRATION, "future:migration")],
+            [(MENU_EDIT_WORKSPACE, "ws:edit")],
+            [(MENU_DELETE_WORKSPACE, "ws:delete")],
+            [(BTN_BACK, "nav:back")],
         ]
     )
 
@@ -43,20 +82,20 @@ def dashboard_keyboard() -> InlineKeyboardMarkup:
 def settings_keyboard() -> InlineKeyboardMarkup:
     return inline_keyboard(
         [
-            [("Reset Workspace Tokens", "settings:reset-tokens")],
-            [("Change Bot Token", "settings:bot-token")],
-            [("Change Owner IDs", "settings:owner-ids")],
-            [("Back", "nav:back")],
+            [(MENU_RESET_TOKENS, "settings:reset-tokens")],
+            [(MENU_CHANGE_BOT_TOKEN, "settings:bot-token")],
+            [(MENU_CHANGE_OWNER_IDS, "settings:owner-ids")],
+            [(BTN_BACK, "nav:back")],
         ]
     )
 
 
 def yes_no_keyboard(yes_data: str, no_data: str) -> InlineKeyboardMarkup:
-    return inline_keyboard([[("Yes", yes_data), ("No", no_data)]])
+    return inline_keyboard([[(BTN_YES, yes_data), (BTN_NO, no_data)]])
 
 
 def cancel_keyboard(cancel_data: str) -> InlineKeyboardMarkup:
-    return inline_keyboard([[("Cancel", cancel_data)]])
+    return inline_keyboard([[(BTN_CANCEL, cancel_data)]])
 
 
 def integrations_keyboard(items: list[tuple[str, str, bool]]) -> InlineKeyboardMarkup:
@@ -67,7 +106,7 @@ def integrations_keyboard(items: list[tuple[str, str, bool]]) -> InlineKeyboardM
             rows.append([(label, f"ws:integration:{key}")])
         else:
             rows.append([(f"{label} (coming soon)", f"ws:integration-soon:{key}")])
-    rows.append([("Cancel", "ws:cancel")])
+    rows.append([(BTN_CANCEL, "ws:cancel")])
     return inline_keyboard(rows)
 
 
@@ -76,7 +115,7 @@ def auth_method_keyboard(*, cancel_data: str = "ws:cancel") -> InlineKeyboardMar
         [
             [("Username / Password", "ws:auth:password")],
             [("Bearer Token", "ws:auth:token")],
-            [("Cancel", cancel_data)],
+            [(BTN_CANCEL, cancel_data)],
         ]
     )
 
@@ -84,42 +123,39 @@ def auth_method_keyboard(*, cancel_data: str = "ws:cancel") -> InlineKeyboardMar
 def verify_ssl_keyboard(*, cancel_data: str = "ws:cancel") -> InlineKeyboardMarkup:
     return inline_keyboard(
         [
-            [("Yes", "ws:ssl:yes"), ("No", "ws:ssl:no")],
-            [("Cancel", cancel_data)],
+            [(BTN_YES, "ws:ssl:yes"), (BTN_NO, "ws:ssl:no")],
+            [(BTN_CANCEL, cancel_data)],
         ]
     )
 
 
 def back_keyboard() -> InlineKeyboardMarkup:
-    return inline_keyboard([[("Back", "nav:back")]])
+    return inline_keyboard([[(BTN_BACK, "nav:back")]])
 
 
 def backup_menu_keyboard() -> InlineKeyboardMarkup:
-    """The Backup page menu, mirroring the CLI options."""
     return inline_keyboard(
         [
-            [("Create Export", "backup:create")],
-            [("Backup History", "backup:history")],
-            [("Delete Backup", "backup:delete")],
-            [("Back", "backup:dashboard")],
+            [(MENU_CREATE_EXPORT, "backup:create")],
+            [(MENU_BACKUP_HISTORY, "backup:history")],
+            [(MENU_DELETE_BACKUP, "backup:delete")],
+            [(BTN_BACK, "backup:dashboard")],
         ]
     )
 
 
 def backup_history_keyboard(archive_names: list[str]) -> InlineKeyboardMarkup:
-    """History list: one button per archive, then Back to the Backup menu."""
     rows = [[(name, f"backup:archive:{name}")] for name in archive_names]
-    rows.append([("Back", "backup:menu")])
+    rows.append([(BTN_BACK, "backup:menu")])
     return inline_keyboard(rows)
 
 
 def archive_details_keyboard(archive_name: str) -> InlineKeyboardMarkup:
-    """Archive Details actions — Download, Delete, or Back to History."""
     return inline_keyboard(
         [
-            [("Download Backup", f"backup:download:{archive_name}")],
-            [("Delete Backup", f"backup:delete:{archive_name}")],
-            [("Back", "backup:history")],
+            [(MENU_DOWNLOAD_BACKUP, f"backup:download:{archive_name}")],
+            [(MENU_DELETE_BACKUP, f"backup:delete:{archive_name}")],
+            [(BTN_BACK, "backup:history")],
         ]
     )
 
@@ -127,96 +163,147 @@ def archive_details_keyboard(archive_name: str) -> InlineKeyboardMarkup:
 def delete_menu_keyboard() -> InlineKeyboardMarkup:
     return inline_keyboard(
         [
-            [("Delete Single Backup", "backup:delete-single")],
-            [("Delete All Backups", "backup:delete-all")],
-            [("Back", "backup:menu")],
+            [(MENU_DELETE_SINGLE, "backup:delete-single")],
+            [(MENU_DELETE_ALL, "backup:delete-all")],
+            [(BTN_BACK, "backup:menu")],
         ]
     )
 
 
 def delete_single_list_keyboard(archive_names: list[str]) -> InlineKeyboardMarkup:
-    """One button per archive, selecting it opens a delete confirmation."""
     rows = [[(name, f"backup:delete:{name}")] for name in archive_names]
-    rows.append([("Back", "backup:delete")])
+    rows.append([(BTN_BACK, "backup:delete")])
     return inline_keyboard(rows)
 
 
 def delete_single_confirm_keyboard(
     archive_name: str, *, no_data: str = "backup:delete-single"
 ) -> InlineKeyboardMarkup:
-    return inline_keyboard(
-        [[("Yes", f"backup:confirm-delete:{archive_name}")], [("No", no_data)]]
-    )
+    return yes_no_keyboard(f"backup:confirm-delete:{archive_name}", no_data)
 
 
 def delete_all_confirm_keyboard() -> InlineKeyboardMarkup:
-    return inline_keyboard([[("Yes", "backup:confirm-delete-all")], [("No", "backup:delete")]])
+    return yes_no_keyboard("backup:confirm-delete-all", "backup:delete")
 
 
 def backup_result_keyboard(archive_name: str) -> InlineKeyboardMarkup:
-    """Completed-export screen: optional download, or Back to the workspace dashboard."""
     return inline_keyboard(
         [
-            [("Download Backup", f"backup:download:{archive_name}")],
-            [("Back", "backup:dashboard")],
+            [(MENU_DOWNLOAD_BACKUP, f"backup:download:{archive_name}")],
+            [(BTN_BACK, "backup:dashboard")],
         ]
     )
 
 
 def backup_back_keyboard() -> InlineKeyboardMarkup:
-    """A lone Back button returning to the refreshed Backup page."""
-    return inline_keyboard([[("Back", "backup:menu")]])
+    return inline_keyboard([[(BTN_BACK, "backup:menu")]])
 
 
 def bulk_ops_keyboard() -> InlineKeyboardMarkup:
     return inline_keyboard(
         [
-            [("Group Manager", "bulk:group_manager")],
-            [("Back", "bulk:dashboard")],
+            [(MENU_GROUP_MANAGER, "bulk:group_manager")],
+            [(BTN_BACK, "bulk:dashboard")],
         ]
     )
 
 
 def gm_menu_keyboard(*, has_working_set: bool) -> InlineKeyboardMarkup:
-    rows = [[("Check Group IDs", "gm:check")]]
+    rows = [[(MENU_SELECT_TARGET, "gm:query")]]
     if has_working_set:
-        rows.append([("View Working Set / Actions", "gm:working_set")])
-    rows.append([("Back", "bulk:menu")])
+        rows.append([(MENU_VIEW_MATCHED, "gm:working_set")])
+    rows.append([(MENU_REFRESH_SNAPSHOT, "gm:refresh")])
+    rows.append([(BTN_BACK, "bulk:menu")])
     return inline_keyboard(rows)
 
 
-def gm_coming_soon_keyboard() -> InlineKeyboardMarkup:
-    return inline_keyboard([[("Back", "gm:working_set")]])
+def gm_result_back_keyboard() -> InlineKeyboardMarkup:
+    return inline_keyboard([[(BTN_BACK, "gm:back_manager")]])
 
 
-def gm_backups_keyboard(backup_names: list[str]) -> InlineKeyboardMarkup:
-    rows = [[(name, f"gm:backup:{name}")] for name in backup_names]
-    rows.append([("Back", "bulk:group_manager")])
-    return inline_keyboard(rows)
-
-
-def gm_query_keyboard(backup_name: str) -> InlineKeyboardMarkup:
+def gm_target_menu_keyboard() -> InlineKeyboardMarkup:
     return inline_keyboard(
         [
-            [("Required Groups", f"gm:query:{backup_name}")],
-            [("Back", "gm:check")],
+            [(TARGET_ALL_USERS, "gm:target:all")],
+            [(TARGET_WITH_GROUPS, "gm:target:with")],
+            [(TARGET_WITHOUT_GROUPS, "gm:target:without")],
+            [(BTN_BACK, "gm:back_manager")],
         ]
     )
 
 
-def gm_confirm_keyboard() -> InlineKeyboardMarkup:
-    return inline_keyboard([[("Yes", "gm:confirm")], [("No", "gm:check")]])
+def gm_group_selector_keyboard(
+    groups,
+    selected_ids: set[int] | list[int],
+    *,
+    toggle_prefix: str = "gm:toggle:",
+    done_callback: str = "gm:groups_done",
+    back_callback: str = "gm:target_menu",
+) -> InlineKeyboardMarkup:
+    """Shared Group Selector keyboard (Target Selection + Actions)."""
+    selected = set(selected_ids)
+    rows = []
+    for group in groups:
+        mark = "☑" if group.id in selected else "☐"
+        rows.append([(f"{mark} {group.id}", f"{toggle_prefix}{group.id}")])
+    rows.append([(TARGET_CONTINUE, done_callback)])
+    rows.append([(BTN_BACK, back_callback)])
+    return inline_keyboard(rows)
 
 
-def gm_result_keyboard() -> InlineKeyboardMarkup:
-    return inline_keyboard([[("Back", "bulk:group_manager")]])
+def gm_target_groups_keyboard(groups, selected_ids: set[int] | list[int]) -> InlineKeyboardMarkup:
+    return gm_group_selector_keyboard(
+        groups,
+        selected_ids,
+        toggle_prefix="gm:toggle:",
+        done_callback="gm:groups_done",
+        back_callback="gm:target_menu",
+    )
 
 
-def gm_input_keyboard() -> InlineKeyboardMarkup:
-    return inline_keyboard([[("Cancel", "gm:check")]])
+def gm_action_groups_keyboard(groups, selected_ids: set[int] | list[int]) -> InlineKeyboardMarkup:
+    return gm_group_selector_keyboard(
+        groups,
+        selected_ids,
+        toggle_prefix="gm:asel:",
+        done_callback="gm:action_done",
+        back_callback="gm:working_set",
+    )
+
+
+def gm_target_require_keyboard() -> InlineKeyboardMarkup:
+    return inline_keyboard(
+        [
+            [(TARGET_REQUIRE_ALL, "gm:require:all")],
+            [(TARGET_REQUIRE_ANY, "gm:require:any")],
+            [(BTN_BACK, "gm:target_menu")],
+        ]
+    )
+
+
+def gm_target_rules_keyboard() -> InlineKeyboardMarkup:
+    return inline_keyboard(
+        [
+            [(TARGET_ADD_RULE, "gm:add_rule")],
+            [(TARGET_CONTINUE, "gm:apply_rules")],
+            [(BTN_BACK, "gm:back_manager")],
+        ]
+    )
 
 
 def gm_actions_keyboard(actions) -> InlineKeyboardMarkup:
     rows = [[(info.label, f"gm:action:{info.id}")] for info in actions]
-    rows.append([("Back", "bulk:group_manager")])
+    rows.append([(BTN_BACK, "gm:back_manager")])
+    return inline_keyboard(rows)
+
+
+def gm_action_confirm_keyboard() -> InlineKeyboardMarkup:
+    return inline_keyboard([[(BTN_CONFIRM, "gm:confirm"), (BTN_CANCEL, "gm:back_manager")]])
+
+
+def gm_report_keyboard(filename: str) -> InlineKeyboardMarkup:
+    rows = []
+    if filename:
+        rows.append([(BTN_DOWNLOAD_REPORT, f"gm:download:{filename}")])
+    rows.append([(BTN_BACK, "gm:back_manager")])
     return inline_keyboard(rows)

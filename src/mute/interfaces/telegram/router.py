@@ -71,25 +71,29 @@ class Router:
     def group_manager(self, chat_id: int) -> TelegramSession:
         return self.go_to(chat_id, Screen.GROUP_MANAGER)
 
-    def gm_check_backup(self, chat_id: int) -> TelegramSession:
-        return self.go_to(chat_id, Screen.GM_CHECK_BACKUP)
+    def gm_target_menu(self, chat_id: int) -> TelegramSession:
+        return self.go_to(chat_id, Screen.GM_TARGET_MENU)
 
-    def gm_check_query(self, chat_id: int, backup_name: str) -> TelegramSession:
-        return self.go_to(chat_id, Screen.GM_CHECK_QUERY, action=backup_name)
+    def gm_target_groups(self, chat_id: int) -> TelegramSession:
+        return self.go_to(chat_id, Screen.GM_TARGET_GROUPS)
 
-    def gm_check_input(self, chat_id: int, backup_name: str) -> TelegramSession:
-        return self.go_to(chat_id, Screen.GM_CHECK_INPUT, action=backup_name)
+    def gm_target_require(self, chat_id: int) -> TelegramSession:
+        return self.go_to(chat_id, Screen.GM_TARGET_REQUIRE)
 
-    def gm_check_confirm(
-        self, chat_id: int, backup_name: str, group_ids: tuple[int, ...]
-    ) -> TelegramSession:
-        encoded = ",".join(str(value) for value in group_ids)
-        return self.go_to(
-            chat_id, Screen.GM_CHECK_CONFIRM, action=f"{backup_name}|{encoded}"
-        )
+    def gm_target_rules(self, chat_id: int) -> TelegramSession:
+        return self.go_to(chat_id, Screen.GM_TARGET_RULES)
 
     def gm_working_set(self, chat_id: int) -> TelegramSession:
         return self.go_to(chat_id, Screen.GM_WORKING_SET)
+
+    def gm_action_input(self, chat_id: int, action_id: str) -> TelegramSession:
+        return self.go_to(chat_id, Screen.GM_ACTION_INPUT, action=action_id)
+
+    def gm_action_confirm(self, chat_id: int, action_id: str) -> TelegramSession:
+        return self.go_to(chat_id, Screen.GM_ACTION_CONFIRM, action=action_id)
+
+    def gm_report(self, chat_id: int) -> TelegramSession:
+        return self.go_to(chat_id, Screen.GM_REPORT)
 
     def remember_message(self, chat_id: int, message_id: int | None) -> TelegramSession:
         return self._sessions.remember_message(chat_id, message_id)

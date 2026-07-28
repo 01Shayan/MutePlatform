@@ -1,6 +1,6 @@
 """Bulk Operations — top-level home for bulk modification modules.
 
-v0.3.0 exposes Group Manager only.
+v0.3.0 exposes Group Manager only. Presentation follows the Design System.
 """
 
 from __future__ import annotations
@@ -8,29 +8,23 @@ from __future__ import annotations
 from rich.prompt import Prompt
 
 from ...core.workspace import Workspace
+from ...ui.copy import BTN_BACK, BULK_OPS_INTRO, MENU_GROUP_MANAGER, TITLE_BULK_OPS
 from .. import theme
-from ..theme import Icon
 from . import group_manager
 
 _MODULES = [
-    ("1", "Group Manager"),
-    ("0", "Back"),
+    ("1", MENU_GROUP_MANAGER),
+    ("0", BTN_BACK),
 ]
 
 
 def run(workspace: Workspace) -> None:
     while True:
         theme.page(
-            "Bulk Operations",
-            theme.body_text(
-                [
-                    "Home for bulk modification workflows.",
-                    "Each manager owns one domain of panel changes.",
-                ]
-            ),
+            TITLE_BULK_OPS,
+            theme.body_text(BULK_OPS_INTRO.splitlines()),
             "",
             theme.option_menu(_MODULES),
-            icon=Icon.GROUPS,
         )
         choice = Prompt.ask(
             "\nSelect an option",

@@ -19,16 +19,17 @@ from ..core.config import ensure_settings, is_first_run
 from ..core.context import AppContext
 from ..core.workspace import WorkspaceStore
 from ..services.workspace import WorkspaceApplicationService
+from ..ui.copy import MENU_ABOUT, MENU_EXIT, MENU_MY_WORKSPACES, MENU_SETTINGS
 from . import theme
 from .screens import about, settings, splash, wizard, workspaces
 from .theme import Icon, console
 
 # (key, label)
 _HOME_ITEMS = [
-    ("1", "My Workspaces"),
-    ("2", "Settings"),
-    ("3", "About"),
-    ("0", "Exit"),
+    ("1", MENU_MY_WORKSPACES),
+    ("2", MENU_SETTINGS),
+    ("3", MENU_ABOUT),
+    ("0", MENU_EXIT),
 ]
 
 

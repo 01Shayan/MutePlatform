@@ -1,4 +1,4 @@
-"""Shared Telegram message templates."""
+"""Shared Telegram message templates — Design System copy (mirrors CLI)."""
 
 from __future__ import annotations
 
@@ -6,11 +6,60 @@ from ...core.constants import APP_NAME, DEVELOPER, FOOTER_TEXT, GITHUB_URL, TAGL
 from ...core.timefmt import relative_time
 from ...services.workspace import ConnectionStatus, WorkspaceApplicationService, WorkspaceNavigationItem
 from ...services.backup import BackupArchive, BackupSummary, archive_display, format_duration, format_size
-from ...services.bulk_operations.group_manager import WorkingSet
-from ...services.bulk_operations.group_manager.checker import format_group_ids
-from ...services.group_checker import BackupSource
+from ...services.bulk_operations.group_manager import (
+    ExecutionReport,
+    WorkingSet,
+    format_duration_seconds,
+    format_home_status,
+    format_query_preview,
+    format_review_screen,
+)
+from ...ui.copy import (
+    ACTIONS_SECTION,
+    BULK_OPS_INTRO,
+    DIVIDER,
+    MATCHED_TITLE,
+    MENU_ABOUT,
+    MENU_BACKUP_HISTORY,
+    MENU_CHANGE_BOT_TOKEN,
+    MENU_CHANGE_OWNER_IDS,
+    MENU_DELETE_ALL,
+    MENU_DELETE_BACKUP,
+    MENU_DELETE_SINGLE,
+    MENU_GROUP_MANAGER,
+    MENU_MY_WORKSPACES,
+    MENU_RESET_TOKENS,
+    MENU_SETTINGS,
+    MSG_BACKUP_DONE,
+    MSG_SELECT_AT_LEAST_ONE_GROUP,
+    REPORT_DURATION,
+    REPORT_FAILED,
+    REPORT_MATCHED,
+    REPORT_SUCCESS,
+    REPORT_SUMMARY_TITLE,
+    REVIEW_TITLE,
+    SETTINGS_INTRO,
+    STATUS_COMPLETED,
+    STATUS_EXECUTING,
+    STATUS_FILTER_CLEARED,
+    STATUS_GROUPS_LOADED,
+    STATUS_MATCHED_RESET,
+    STATUS_NO_CANCEL,
+    STATUS_REFRESH_OK,
+    STATUS_REFRESHING,
+    STATUS_USERS_LOADED,
+    TARGET_REQUIRE_ALL,
+    TARGET_REQUIRE_ANY,
+    TARGET_SELECT_GROUPS,
+    TARGET_TITLE,
+    TITLE_BACKUP,
+    TITLE_BULK_OPS,
+    TITLE_HOME,
+    TITLE_SETTINGS,
+)
+from ...services.bulk_operations.group_manager.session import GroupManagerSession
 
-_HOME_DIVIDER = "--------------------------------"
+_HOME_DIVIDER = DIVIDER
 
 
 def home() -> str:
@@ -26,11 +75,11 @@ def home() -> str:
             "",
             _HOME_DIVIDER,
             "",
-            "Home",
+            TITLE_HOME,
             "",
-            "1. My Workspaces",
-            "2. Settings",
-            "3. About",
+            f"1. {MENU_MY_WORKSPACES}",
+            f"2. {MENU_SETTINGS}",
+            f"3. {MENU_ABOUT}",
             "",
             _HOME_DIVIDER,
             "",
@@ -40,7 +89,7 @@ def home() -> str:
 
 
 def workspaces(items: list[WorkspaceNavigationItem]) -> str:
-    lines = ["My Workspaces", ""]
+    lines = [MENU_MY_WORKSPACES, ""]
     if items:
         lines.extend(f"{index}. {item.name} — {item.panel}" for index, item in enumerate(items, start=1))
     else:
@@ -55,11 +104,11 @@ def dashboard(workspace: WorkspaceNavigationItem) -> str:
 
 def settings() -> str:
     return (
-        "Settings\n\n"
-        "Manage Telegram and workspace credentials.\n\n"
-        "1. Reset Workspace Tokens\n"
-        "2. Change Bot Token\n"
-        "3. Change Owner IDs"
+        f"{TITLE_SETTINGS}\n\n"
+        f"{SETTINGS_INTRO}\n\n"
+        f"1. {MENU_RESET_TOKENS}\n"
+        f"2. {MENU_CHANGE_BOT_TOKEN}\n"
+        f"3. {MENU_CHANGE_OWNER_IDS}"
     )
 
 
@@ -77,7 +126,7 @@ def status_label(status: ConnectionStatus) -> str:
 
 def backup_status(latest, *, workspace: str) -> str:
     """Render the Backup page status, mirroring the CLI's latest-backup panel."""
-    header = f"Backup — {workspace}"
+    header = f"{TITLE_BACKUP} — {workspace}"
     if latest is None:
         return f"{header}\n\nLatest Backup: No backup available.\nUsers: —\nArchive Size: —"
     return (
@@ -90,16 +139,20 @@ def backup_status(latest, *, workspace: str) -> str:
 
 
 def backup_progress(stage: str) -> str:
-    return f"Backup\n\n{stage}"
+    return f"{TITLE_BACKUP}\n\n{stage}"
 
 
 def delete_menu() -> str:
-    return "Delete Backup\n\n1. Delete Single Backup\n2. Delete All Backups"
+    return (
+        f"{MENU_DELETE_BACKUP}\n\n"
+        f"1. {MENU_DELETE_SINGLE}\n"
+        f"2. {MENU_DELETE_ALL}"
+    )
 
 
 def backup_result(summary: BackupSummary) -> str:
     return (
-        "Backup completed successfully.\n\n"
+        f"{MSG_BACKUP_DONE}\n\n"
         f"Workspace: {summary.workspace}\n"
         f"Users: {summary.users}\n"
         f"Archive Size: {format_size(summary.size_bytes)}\n"
@@ -112,10 +165,10 @@ def backup_result(summary: BackupSummary) -> str:
 def backup_history(
     archives: list[BackupArchive],
     *,
-    title: str = "Backup History",
+    title: str | None = None,
     selectable: bool = False,
 ) -> str:
-    lines = [title, ""]
+    lines = [title or MENU_BACKUP_HISTORY, ""]
     if not archives:
         lines.append("No backups have been created yet.")
     else:
@@ -166,123 +219,132 @@ def friendly_error() -> str:
 
 def bulk_ops_menu(workspace: str) -> str:
     return (
-        f"Bulk Operations — {workspace}\n\n"
-        "Home for bulk modification workflows.\n"
-        "Each manager owns one domain of panel changes.\n\n"
-        "1. Group Manager"
+        f"{TITLE_BULK_OPS} — {workspace}\n\n"
+        f"{BULK_OPS_INTRO}\n\n"
+        f"1. {MENU_GROUP_MANAGER}"
     )
 
 
-def gm_menu(workspace: str, *, working_set: WorkingSet | None = None) -> str:
-    if working_set is not None:
-        status = (
-            f"Working Set: {working_set.matched_count} matched · "
-            f"{working_set.unmatched_count} unmatched · backup {working_set.backup_name}"
+def gm_menu(workspace: str, *, session: GroupManagerSession | None = None) -> str:
+    snapshot_users = session.snapshot.user_count if session and session.snapshot else 0
+    groups = len(session.catalog) if session and session.catalog else 0
+    working_set = session.working_set if session else None
+    matched = working_set.matched if working_set is not None else None
+    return "\n".join(
+        format_home_status(
+            workspace=workspace,
+            snapshot_users=snapshot_users,
+            available_groups=groups,
+            working_set_matched=matched,
         )
-    else:
-        status = "Working Set: none — run Check Group IDs first."
-    lines = [
-        f"Group Manager — {workspace}",
-        "",
-        "Manage Required Group IDs for users in this workspace.",
-        "Check builds a Working Set. Actions operate on that set only.",
-        "",
-        status,
-        "",
-        "1. Check Group IDs",
-    ]
-    if working_set is not None:
-        lines.append("2. View Working Set / Actions")
-    return "\n".join(lines)
-
-
-def gm_coming_soon(title: str, description: str = "") -> str:
-    body = description or "This action is not available yet."
-    return (
-        f"{title}\n\n{body}\n\n"
-        "Status: Coming soon\n"
-        "Operates on the current Working Set — no additional search."
     )
 
 
-def gm_no_backups() -> str:
-    return "No backups have been created yet.\nCreate a backup first."
-
-
-def gm_select_backup(sources: list[BackupSource]) -> str:
-    lines = ["Select Backup", ""]
-    for index, source in enumerate(sources, start=1):
-        lines.append(f"{index}. {source.name} — {source.users} users · {source.size_label}")
+def gm_target_menu(*, rules_text: list[str] | None = None) -> str:
+    lines = [TARGET_TITLE, "", "Who do you want to target?"]
+    if rules_text:
+        lines.extend(["", *rules_text])
     return "\n".join(lines)
 
 
-def gm_select_query(backup_name: str) -> str:
-    return f"Check Group IDs\n\nBackup: {backup_name}\n\n1. Required Groups"
-
-
-def gm_ask_group_ids(backup_name: str) -> str:
-    return (
-        f"Required Groups\n\n"
-        f"Backup: {backup_name}\n\n"
-        "Send the required group IDs as a message.\n"
-        "Example: 1, 3"
-    )
-
-
-def gm_confirmation(
-    workspace: str, backup_name: str, group_ids: tuple[int, ...], users: int
+def gm_group_selector(
+    *,
+    title: str,
+    subtitle: str,
+    groups,
+    selected_ids: list[int] | None = None,
 ) -> str:
-    return (
-        "Check Confirmation\n\n"
-        f"Workspace: {workspace}\n"
-        f"Backup: {backup_name}\n"
-        f"Query: Required Groups\n"
-        f"Required Groups: {format_group_ids(group_ids)}\n"
-        f"Users in Backup: {users}"
+    """Shared Group Selector body — mirrors CLI format_group_selector_screen."""
+    from ...ui.components.group_selector import build_group_state, format_group_selector_screen
+
+    state = build_group_state(groups, selected=selected_ids or ())
+    return "\n".join(
+        format_group_selector_screen(title=title, subtitle=subtitle, state=state)
     )
 
 
-def gm_progress(stage: str) -> str:
-    return f"Group Manager — Check\n\n{stage}"
+def gm_target_groups(*, groups, selected_ids: list[int] | None = None) -> str:
+    return gm_group_selector(
+        title=TARGET_TITLE,
+        subtitle=TARGET_SELECT_GROUPS,
+        groups=groups,
+        selected_ids=selected_ids,
+    )
 
 
-def gm_working_set(working_set: WorkingSet, *, limit: int = 30) -> str:
-    lines = [
-        "Check completed.",
-        "",
-        f"Backup: {working_set.backup_name}",
-        f"Query: {working_set.query_label}",
-        f"Required Groups: {format_group_ids(working_set.required_group_ids)}",
-        f"Total Users: {working_set.total_users}",
-        f"Matched Users: {working_set.matched_count}",
-        f"Unmatched Users: {working_set.unmatched_count}",
-        f"Duration: {format_duration(working_set.duration_seconds)}",
-        "",
-    ]
-    if not working_set.matched_users:
-        lines.append("No users matched this check.")
-    else:
-        lines.append("Matched users (Working Set for Actions):")
-        lines.append("Username | Current | Missing")
-        for row in working_set.matched_users[:limit]:
-            lines.append(
-                f"{row.username} | {format_group_ids(row.current_group_ids)} | "
-                f"{format_group_ids(row.missing_group_ids)}"
-            )
-        if working_set.matched_count > limit:
-            lines.append("")
-            lines.append(f"Showing first {limit} of {working_set.matched_count} matched users.")
-    lines.extend(["", "Available Actions:", "• Add Group IDs", "• Remove Group IDs", "• Replace Group IDs"])
+def gm_target_require() -> str:
+    return "\n".join(
+        [
+            TARGET_TITLE,
+            "",
+            "Selected users should have:",
+            "",
+            f"(●) {TARGET_REQUIRE_ALL}",
+            f"( ) {TARGET_REQUIRE_ANY}",
+        ]
+    )
+
+
+def gm_target_rules_summary(rules_text: list[str]) -> str:
+    return "\n".join([TARGET_TITLE, "", *rules_text])
+
+
+def gm_working_set(working_set: WorkingSet, *, rules=None) -> str:
+    lines = [MATCHED_TITLE, ""]
+    lines.extend(format_query_preview(working_set, rules=rules))
+    lines.extend(["", ACTIONS_SECTION])
     return "\n".join(lines)
+
+
+def gm_review(working_set: WorkingSet, *, action_label: str, group_ids: tuple[int, ...], rules=None) -> str:
+    lines = [REVIEW_TITLE, ""]
+    lines.extend(
+        format_review_screen(
+            working_set, action_label=action_label, group_ids=group_ids, rules=rules
+        )
+    )
+    return "\n".join(lines)
+
+
+def gm_refresh_result() -> str:
+    return "\n".join(
+        [
+            STATUS_REFRESHING,
+            STATUS_USERS_LOADED,
+            STATUS_GROUPS_LOADED,
+            STATUS_REFRESH_OK,
+            STATUS_FILTER_CLEARED,
+            STATUS_MATCHED_RESET,
+        ]
+    )
+
+
+def gm_operation_completed(report: ExecutionReport) -> str:
+    return (
+        f"{STATUS_COMPLETED}\n\n"
+        f"{REPORT_SUMMARY_TITLE}\n"
+        f"{REPORT_MATCHED}: {report.summary.matched}\n"
+        f"{REPORT_SUCCESS}: {report.summary.success}\n"
+        f"{REPORT_FAILED}: {report.summary.failed}\n"
+        f"{REPORT_DURATION}: {format_duration_seconds(report.duration_ms)}"
+    )
 
 
 def gm_error(detail: str | None = None) -> str:
-    base = "Group Manager could not complete the check."
+    base = "Group Manager could not complete the operation."
     return f"{base}\n\n{detail}" if detail else f"{base} Please try again."
 
 
 def gm_invalid_ids(detail: str) -> str:
-    return f"Invalid group IDs.\n\n{detail}\n\nSend the required group IDs again (e.g. 1, 3)."
+    return f"Invalid group IDs.\n\n{detail}\n\nSend numeric IDs again (e.g. 1, 3), or - for none."
+
+
+def gm_running() -> str:
+    return f"{STATUS_EXECUTING}\n\n{STATUS_NO_CANCEL}"
+
+
+def gm_need_groups() -> str:
+    return MSG_SELECT_AT_LEAST_ONE_GROUP
 
 
 def ask_workspace_name(*, current: str | None = None) -> str:

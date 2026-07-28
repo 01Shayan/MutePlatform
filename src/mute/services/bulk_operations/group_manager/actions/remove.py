@@ -1,29 +1,37 @@
-"""Remove Group IDs action."""
+"""Remove Groups action."""
 
 from __future__ import annotations
 
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
-from .....core.workspace import Workspace
-from ..errors import GroupManagerError
-from ..working_set import WorkingSet
-from .base import ActionSummary, GroupAction
+from ..ids import parse_group_ids
+from ..working_set import WorkingSetUser
+from .base import GroupAction, PlannedChange
+from .....ui.copy import ACTION_REMOVE_GROUPS
 
 
 class RemoveGroupIdsAction(GroupAction):
     id = "remove"
-    label = "Remove Group IDs"
+    label = ACTION_REMOVE_GROUPS
     description = "Remove group IDs from every matched user in the current Working Set."
-    available = False
+    report_action = "remove_groups"
+    available = True
 
-    def validate_parameters(self, parameters: Mapping[str, Any], working_set: WorkingSet) -> None:
-        raise GroupManagerError(f"{self.label} is coming soon.")
+    def validate_parameters(self, parameters: Mapping[str, Any]) -> tuple[int, ...]:
+        raw = parameters.get("group_ids")
+        if isinstance(raw, str):
+            return parse_group_ids(raw)
+        if isinstance(raw, (list, tuple)):
+            return tuple(int(value) for value in raw)
+        raise ValueError("group_ids is required.")
 
-    def execute(
-        self,
-        working_set: WorkingSet,
-        parameters: Mapping[str, Any],
-        *,
-        workspace: Workspace,
-    ) -> ActionSummary:
-        raise GroupManagerError(f"{self.label} is coming soon.")
+    def plan(
+        self, users: Sequence[WorkingSetUser], group_ids: Sequence[int]
+    ) -> list[PlannedChange]:
+        remove = set(group_ids)
+        planned: list[PlannedChange] = []
+        for user in users:
+            before = tuple(user.group_ids)
+            after = tuple(sorted(set(before) - remove))
+            planned.append(PlannedChange(username=user.username, before=before, after=after))
+        return planned

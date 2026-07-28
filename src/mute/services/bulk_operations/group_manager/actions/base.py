@@ -4,16 +4,13 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
-from .....core.workspace import Workspace
-from ..working_set import WorkingSet
+from ..working_set import WorkingSetUser
 
 
 @dataclass(frozen=True)
 class ActionInfo:
-    """Menu-safe description of a registered action."""
-
     id: str
     label: str
     available: bool
@@ -21,14 +18,10 @@ class ActionInfo:
 
 
 @dataclass(frozen=True)
-class ActionSummary:
-    """Outcome of a successful action execution."""
-
-    action_id: str
-    action_label: str
-    user_count: int
-    message: str = ""
-    details: tuple[str, ...] = ()
+class PlannedChange:
+    username: str
+    before: tuple[int, ...]
+    after: tuple[int, ...]
 
 
 class GroupAction(ABC):
@@ -37,21 +30,18 @@ class GroupAction(ABC):
     id: str
     label: str
     description: str = ""
+    report_action: str = ""
 
     @property
     def available(self) -> bool:
         return True
 
     @abstractmethod
-    def validate_parameters(self, parameters: Mapping[str, Any], working_set: WorkingSet) -> None:
-        """Raise GroupManagerError / ValueError when configuration is invalid."""
+    def validate_parameters(self, parameters: Mapping[str, Any]) -> tuple[int, ...]:
+        """Return validated group IDs for the action."""
 
     @abstractmethod
-    def execute(
-        self,
-        working_set: WorkingSet,
-        parameters: Mapping[str, Any],
-        *,
-        workspace: Workspace,
-    ) -> ActionSummary:
-        """Apply the modification to the Working Set's matched users."""
+    def plan(
+        self, users: Sequence[WorkingSetUser], group_ids: Sequence[int]
+    ) -> list[PlannedChange]:
+        """Compute per-user before/after group membership. No Panel calls."""
