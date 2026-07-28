@@ -31,7 +31,7 @@ def dashboard_keyboard() -> InlineKeyboardMarkup:
     return inline_keyboard(
         [
             [("Backup", "backup:menu")],
-            [("Group Engine", "group_checker:menu")],
+            [("Bulk Operations", "bulk:menu")],
             [("Migration", "future:migration")],
             [("Edit Workspace", "ws:edit")],
             [("Delete Workspace", "ws:delete")],
@@ -168,78 +168,55 @@ def backup_back_keyboard() -> InlineKeyboardMarkup:
     return inline_keyboard([[("Back", "backup:menu")]])
 
 
-def group_checker_menu_keyboard() -> InlineKeyboardMarkup:
-    """Group Engine menu — mirrors the CLI operation list."""
+def bulk_ops_keyboard() -> InlineKeyboardMarkup:
     return inline_keyboard(
         [
-            [("Check", "group_checker:run")],
-            [("Select Users", "group_engine:select")],
-            [("Add", "group_checker:soon:add")],
-            [("Remove", "group_checker:soon:remove")],
-            [("Replace", "group_checker:soon:replace")],
-            [("History", "group_checker:soon:history")],
-            [("Back", "group_checker:dashboard")],
+            [("Group Manager", "bulk:group_manager")],
+            [("Back", "bulk:dashboard")],
         ]
     )
 
 
-def group_checker_coming_soon_keyboard() -> InlineKeyboardMarkup:
-    return inline_keyboard([[("Back", "group_checker:menu")]])
-
-
-def group_engine_select_keyboard() -> InlineKeyboardMarkup:
-    return inline_keyboard(
-        [
-            [("Select from backup", "group_engine:select-backup")],
-            [("Clear selection", "group_engine:clear")],
-            [("Back", "group_checker:menu")],
-        ]
-    )
-
-
-def group_engine_backup_keyboard(backup_names: list[str]) -> InlineKeyboardMarkup:
-    rows = [[(name, f"group_engine:backup:{name}")] for name in backup_names]
-    rows.append([("Back", "group_engine:select")])
+def gm_menu_keyboard(*, has_working_set: bool) -> InlineKeyboardMarkup:
+    rows = [[("Check Group IDs", "gm:check")]]
+    if has_working_set:
+        rows.append([("View Working Set / Actions", "gm:working_set")])
+    rows.append([("Back", "bulk:menu")])
     return inline_keyboard(rows)
 
 
-def group_engine_backup_mode_keyboard(backup_name: str) -> InlineKeyboardMarkup:
-    return inline_keyboard(
-        [
-            [("Select all users", f"group_engine:all:{backup_name}")],
-            [("Enter usernames", f"group_engine:names:{backup_name}")],
-            [("Back", "group_engine:select-backup")],
-        ]
-    )
+def gm_coming_soon_keyboard() -> InlineKeyboardMarkup:
+    return inline_keyboard([[("Back", "gm:working_set")]])
 
 
-def group_engine_names_keyboard() -> InlineKeyboardMarkup:
-    return inline_keyboard([[("Cancel", "group_engine:select")]])
-
-def group_checker_backups_keyboard(backup_names: list[str]) -> InlineKeyboardMarkup:
-    rows = [[(name, f"group_checker:backup:{name}")] for name in backup_names]
-    rows.append([("Back", "group_checker:menu")])
+def gm_backups_keyboard(backup_names: list[str]) -> InlineKeyboardMarkup:
+    rows = [[(name, f"gm:backup:{name}")] for name in backup_names]
+    rows.append([("Back", "bulk:group_manager")])
     return inline_keyboard(rows)
 
 
-def group_checker_query_keyboard(backup_name: str) -> InlineKeyboardMarkup:
+def gm_query_keyboard(backup_name: str) -> InlineKeyboardMarkup:
     return inline_keyboard(
         [
-            [("Required Groups", f"group_checker:query:{backup_name}")],
-            [("Back", "group_checker:run")],
+            [("Required Groups", f"gm:query:{backup_name}")],
+            [("Back", "gm:check")],
         ]
     )
 
 
-def group_checker_confirm_keyboard() -> InlineKeyboardMarkup:
-    return inline_keyboard(
-        [[("Yes", "group_checker:confirm")], [("No", "group_checker:run")]]
-    )
+def gm_confirm_keyboard() -> InlineKeyboardMarkup:
+    return inline_keyboard([[("Yes", "gm:confirm")], [("No", "gm:check")]])
 
 
-def group_checker_result_keyboard() -> InlineKeyboardMarkup:
-    return inline_keyboard([[("Back", "group_checker:menu")]])
+def gm_result_keyboard() -> InlineKeyboardMarkup:
+    return inline_keyboard([[("Back", "bulk:group_manager")]])
 
 
-def group_checker_input_keyboard() -> InlineKeyboardMarkup:
-    return inline_keyboard([[("Cancel", "group_checker:run")]])
+def gm_input_keyboard() -> InlineKeyboardMarkup:
+    return inline_keyboard([[("Cancel", "gm:check")]])
+
+
+def gm_actions_keyboard(actions) -> InlineKeyboardMarkup:
+    rows = [[(info.label, f"gm:action:{info.id}")] for info in actions]
+    rows.append([("Back", "bulk:group_manager")])
+    return inline_keyboard(rows)

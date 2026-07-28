@@ -20,10 +20,10 @@ Platform**. PasarGuard is the first supported integration. Future modules are do
 **0.3.0-dev — Development**
 
 **Status:** Development  
-**Next milestone:** Groups Module
+**Next milestone:** Bulk Operations · Group Manager
 
-Active development after the stable v0.2.1 line. Focus is the Groups domain
-(Check · Modify · History) and a Shared Group Operation Engine. Migration remains deferred.
+Active development after the stable v0.2.1 line. Focus is Bulk Operations with
+Group Manager (Check → Working Set → Actions). Migration remains deferred.
 
 ---
 
@@ -91,14 +91,14 @@ Interfaces
 ├── CLI
 │     Home
 │     ├── My Workspaces
-│     │     └── Workspace Dashboard → Backup · Group Engine · Migration (deferred)
+│     │     └── Workspace Dashboard → Backup · Bulk Operations · Migration (deferred)
 │     ├── Settings
 │     └── About
 │
 └── Telegram (owner-only)
       Home
       ├── My Workspaces
-      │     └── Workspace Dashboard → Backup · Group Engine · Migration (deferred)
+      │     └── Workspace Dashboard → Backup · Bulk Operations · Migration (deferred)
       ├── Settings
       └── About
 
@@ -327,7 +327,7 @@ v0.2.0  Group Checker                                      Released
    ↓
 v0.2.1  Telegram Workspace Management                      Stable
    ↓
-v0.3.0  Groups Module                                      In Development
+v0.3.0  Bulk Operations · Group Manager                    In Development
    ↓
 Migration                                                  Deferred
    ↓

@@ -32,6 +32,7 @@ CHANNEL_FILES: dict[str, str] = {
     "backup": "backup.log",
     "migration": "migration.log",
     "group_checker": "group_checker.log",
+    "group_manager": "group_manager.log",
 }
 
 _current_dir: Path | None = None

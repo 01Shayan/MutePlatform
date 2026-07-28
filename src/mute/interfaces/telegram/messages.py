@@ -6,7 +6,9 @@ from ...core.constants import APP_NAME, DEVELOPER, FOOTER_TEXT, GITHUB_URL, TAGL
 from ...core.timefmt import relative_time
 from ...services.workspace import ConnectionStatus, WorkspaceApplicationService, WorkspaceNavigationItem
 from ...services.backup import BackupArchive, BackupSummary, archive_display, format_duration, format_size
-from ...services.group_checker import BackupSource, GroupCheckerResult, format_group_ids
+from ...services.bulk_operations.group_manager import WorkingSet
+from ...services.bulk_operations.group_manager.checker import format_group_ids
+from ...services.group_checker import BackupSource
 
 _HOME_DIVIDER = "--------------------------------"
 
@@ -162,107 +164,63 @@ def friendly_error() -> str:
     return "Something went wrong. Please try again."
 
 
-def group_checker_menu(workspace: str, *, selected_count: int = 0, backup_name: str | None = None) -> str:
-    if selected_count:
-        suffix = f" from {backup_name}" if backup_name else ""
-        selection = f"Selected users: {selected_count}{suffix}"
+def bulk_ops_menu(workspace: str) -> str:
+    return (
+        f"Bulk Operations — {workspace}\n\n"
+        "Home for bulk modification workflows.\n"
+        "Each manager owns one domain of panel changes.\n\n"
+        "1. Group Manager"
+    )
+
+
+def gm_menu(workspace: str, *, working_set: WorkingSet | None = None) -> str:
+    if working_set is not None:
+        status = (
+            f"Working Set: {working_set.matched_count} matched · "
+            f"{working_set.unmatched_count} unmatched · backup {working_set.backup_name}"
+        )
     else:
-        selection = "Selected users: none"
-    return (
-        f"Group Engine — {workspace}\n\n"
-        "Central home for all group operations.\n"
-        "Write ops share one session: Select Users → Operation → Preview → Confirm → Execute.\n\n"
-        f"{selection}\n\n"
-        "1. Check\n"
-        "2. Select Users\n"
-        "3. Add\n"
-        "4. Remove\n"
-        "5. Replace\n"
-        "6. History"
-    )
-
-
-def group_checker_coming_soon(operation: str, *, description: str | None = None) -> str:
-    descriptions = {
-        "add": (
-            "Add groups to selected users.\n"
-            "Will follow Select → Preview → Confirmation → Execute → Summary."
-        ),
-        "remove": (
-            "Remove groups from selected users.\n"
-            "Will follow Select → Preview → Confirmation → Execute → Summary."
-        ),
-        "replace": (
-            "Replace group membership for selected users.\n"
-            "Will follow Select → Preview → Confirmation → Execute → Summary."
-        ),
-        "history": "Review metadata for past group operations in this workspace.",
-    }
-    title = operation.capitalize()
-    body = description or descriptions.get(operation, "This operation is not available yet.")
-    return f"{title}\n\n{body}\n\nStatus: Coming soon\nUses the shared Group Engine workflow when implemented."
-
-
-def group_engine_select_users(selected_count: int) -> str:
-    return (
-        "Select Users\n\n"
-        "Selection persists until you leave Group Engine.\n"
-        f"Currently selected: {selected_count}\n\n"
-        "1. Select from backup\n"
-        "2. Clear selection"
-    )
-
-
-def group_engine_select_backup(sources: list[BackupSource]) -> str:
-    lines = ["Select Backup", ""]
-    for index, source in enumerate(sources, start=1):
-        lines.append(f"{index}. {source.name} — {source.users} users · {source.size_label}")
+        status = "Working Set: none — run Check Group IDs first."
+    lines = [
+        f"Group Manager — {workspace}",
+        "",
+        "Manage Required Group IDs for users in this workspace.",
+        "Check builds a Working Set. Actions operate on that set only.",
+        "",
+        status,
+        "",
+        "1. Check Group IDs",
+    ]
+    if working_set is not None:
+        lines.append("2. View Working Set / Actions")
     return "\n".join(lines)
 
 
-def group_engine_backup_mode(backup_name: str, users: int) -> str:
+def gm_coming_soon(title: str, description: str = "") -> str:
+    body = description or "This action is not available yet."
     return (
-        f"Select Users\n\n"
-        f"Backup: {backup_name}\n"
-        f"Users in backup: {users}\n\n"
-        "1. Select all users\n"
-        "2. Enter usernames"
+        f"{title}\n\n{body}\n\n"
+        "Status: Coming soon\n"
+        "Operates on the current Working Set — no additional search."
     )
 
 
-def group_engine_ask_usernames(backup_name: str) -> str:
-    return (
-        f"Select Users\n\n"
-        f"Backup: {backup_name}\n\n"
-        "Send usernames as a message.\n"
-        "Example: alice, bob"
-    )
-
-
-def group_engine_selection_result(count: int) -> str:
-    return f"Selected {count} user(s)."
-
-
-def group_engine_error(detail: str) -> str:
-    return f"Group Engine\n\n{detail}"
-
-
-def group_checker_no_backups() -> str:
+def gm_no_backups() -> str:
     return "No backups have been created yet.\nCreate a backup first."
 
 
-def group_checker_select_backup(sources: list[BackupSource]) -> str:
+def gm_select_backup(sources: list[BackupSource]) -> str:
     lines = ["Select Backup", ""]
     for index, source in enumerate(sources, start=1):
         lines.append(f"{index}. {source.name} — {source.users} users · {source.size_label}")
     return "\n".join(lines)
 
 
-def group_checker_select_query(backup_name: str) -> str:
-    return f"Select Query\n\nBackup: {backup_name}\n\n1. Required Groups"
+def gm_select_query(backup_name: str) -> str:
+    return f"Check Group IDs\n\nBackup: {backup_name}\n\n1. Required Groups"
 
 
-def group_checker_ask_group_ids(backup_name: str) -> str:
+def gm_ask_group_ids(backup_name: str) -> str:
     return (
         f"Required Groups\n\n"
         f"Backup: {backup_name}\n\n"
@@ -271,11 +229,11 @@ def group_checker_ask_group_ids(backup_name: str) -> str:
     )
 
 
-def group_checker_confirmation(
+def gm_confirmation(
     workspace: str, backup_name: str, group_ids: tuple[int, ...], users: int
 ) -> str:
     return (
-        "Query Confirmation\n\n"
+        "Check Confirmation\n\n"
         f"Workspace: {workspace}\n"
         f"Backup: {backup_name}\n"
         f"Query: Required Groups\n"
@@ -284,44 +242,46 @@ def group_checker_confirmation(
     )
 
 
-def group_checker_progress(stage: str) -> str:
-    return f"Group Engine — Check\n\n{stage}"
+def gm_progress(stage: str) -> str:
+    return f"Group Manager — Check\n\n{stage}"
 
 
-def group_checker_result(result: GroupCheckerResult, *, limit: int = 30) -> str:
+def gm_working_set(working_set: WorkingSet, *, limit: int = 30) -> str:
     lines = [
-        "Query completed.",
+        "Check completed.",
         "",
-        f"Backup: {result.backup_name}",
-        f"Query: {result.query_label}",
-        f"Required Groups: {format_group_ids(result.required_group_ids)}",
-        f"Total Users: {result.total_users}",
-        f"Matching Users: {result.matching_users}",
-        f"Duration: {format_duration(result.duration_seconds)}",
+        f"Backup: {working_set.backup_name}",
+        f"Query: {working_set.query_label}",
+        f"Required Groups: {format_group_ids(working_set.required_group_ids)}",
+        f"Total Users: {working_set.total_users}",
+        f"Matched Users: {working_set.matched_count}",
+        f"Unmatched Users: {working_set.unmatched_count}",
+        f"Duration: {format_duration(working_set.duration_seconds)}",
         "",
     ]
-    if not result.users:
-        lines.append("No users matched this query.")
-        return "\n".join(lines)
-
-    lines.append("Username | Current | Missing")
-    for row in result.users[:limit]:
-        lines.append(
-            f"{row.username} | {format_group_ids(row.current_group_ids)} | "
-            f"{format_group_ids(row.missing_group_ids)}"
-        )
-    if result.matching_users > limit:
-        lines.append("")
-        lines.append(f"Showing first {limit} of {result.matching_users} matching users.")
+    if not working_set.matched_users:
+        lines.append("No users matched this check.")
+    else:
+        lines.append("Matched users (Working Set for Actions):")
+        lines.append("Username | Current | Missing")
+        for row in working_set.matched_users[:limit]:
+            lines.append(
+                f"{row.username} | {format_group_ids(row.current_group_ids)} | "
+                f"{format_group_ids(row.missing_group_ids)}"
+            )
+        if working_set.matched_count > limit:
+            lines.append("")
+            lines.append(f"Showing first {limit} of {working_set.matched_count} matched users.")
+    lines.extend(["", "Available Actions:", "• Add Group IDs", "• Remove Group IDs", "• Replace Group IDs"])
     return "\n".join(lines)
 
 
-def group_checker_error(detail: str | None = None) -> str:
-    base = "Group Engine could not complete the check."
+def gm_error(detail: str | None = None) -> str:
+    base = "Group Manager could not complete the check."
     return f"{base}\n\n{detail}" if detail else f"{base} Please try again."
 
 
-def group_checker_invalid_ids(detail: str) -> str:
+def gm_invalid_ids(detail: str) -> str:
     return f"Invalid group IDs.\n\n{detail}\n\nSend the required group IDs again (e.g. 1, 3)."
 
 

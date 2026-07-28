@@ -65,40 +65,31 @@ class Router:
     def backup_delete_all_confirmation(self, chat_id: int) -> TelegramSession:
         return self.go_to(chat_id, Screen.BACKUP_DELETE_ALL_CONFIRM, action="delete-all")
 
-    def group_checker(self, chat_id: int) -> TelegramSession:
-        return self.go_to(chat_id, Screen.GROUP_CHECKER)
+    def bulk_ops(self, chat_id: int) -> TelegramSession:
+        return self.go_to(chat_id, Screen.BULK_OPS)
 
-    def group_checker_backup(self, chat_id: int) -> TelegramSession:
-        return self.go_to(chat_id, Screen.GROUP_CHECKER_BACKUP)
+    def group_manager(self, chat_id: int) -> TelegramSession:
+        return self.go_to(chat_id, Screen.GROUP_MANAGER)
 
-    def group_checker_query(self, chat_id: int, backup_name: str) -> TelegramSession:
-        return self.go_to(chat_id, Screen.GROUP_CHECKER_QUERY, action=backup_name)
+    def gm_check_backup(self, chat_id: int) -> TelegramSession:
+        return self.go_to(chat_id, Screen.GM_CHECK_BACKUP)
 
-    def group_checker_input(self, chat_id: int, backup_name: str) -> TelegramSession:
-        return self.go_to(chat_id, Screen.GROUP_CHECKER_INPUT, action=backup_name)
+    def gm_check_query(self, chat_id: int, backup_name: str) -> TelegramSession:
+        return self.go_to(chat_id, Screen.GM_CHECK_QUERY, action=backup_name)
 
-    def group_checker_confirm(
+    def gm_check_input(self, chat_id: int, backup_name: str) -> TelegramSession:
+        return self.go_to(chat_id, Screen.GM_CHECK_INPUT, action=backup_name)
+
+    def gm_check_confirm(
         self, chat_id: int, backup_name: str, group_ids: tuple[int, ...]
     ) -> TelegramSession:
         encoded = ",".join(str(value) for value in group_ids)
         return self.go_to(
-            chat_id, Screen.GROUP_CHECKER_CONFIRM, action=f"{backup_name}|{encoded}"
+            chat_id, Screen.GM_CHECK_CONFIRM, action=f"{backup_name}|{encoded}"
         )
 
-    def group_checker_result(self, chat_id: int) -> TelegramSession:
-        return self.go_to(chat_id, Screen.GROUP_CHECKER_RESULT)
-
-    def group_engine_select(self, chat_id: int) -> TelegramSession:
-        return self.go_to(chat_id, Screen.GROUP_ENGINE_SELECT)
-
-    def group_engine_select_backup(self, chat_id: int) -> TelegramSession:
-        return self.go_to(chat_id, Screen.GROUP_ENGINE_SELECT_BACKUP)
-
-    def group_engine_select_mode(self, chat_id: int, backup_name: str) -> TelegramSession:
-        return self.go_to(chat_id, Screen.GROUP_ENGINE_SELECT_MODE, action=backup_name)
-
-    def group_engine_select_names(self, chat_id: int, backup_name: str) -> TelegramSession:
-        return self.go_to(chat_id, Screen.GROUP_ENGINE_SELECT_NAMES, action=backup_name)
+    def gm_working_set(self, chat_id: int) -> TelegramSession:
+        return self.go_to(chat_id, Screen.GM_WORKING_SET)
 
     def remember_message(self, chat_id: int, message_id: int | None) -> TelegramSession:
         return self._sessions.remember_message(chat_id, message_id)

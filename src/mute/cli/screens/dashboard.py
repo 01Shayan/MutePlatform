@@ -13,11 +13,11 @@ from ...core.workspace import Workspace, WorkspaceStore
 from ...services.workspace import ConnectionStatus, WorkspaceApplicationService
 from .. import theme
 from ..theme import Icon, console
-from . import backup, group_checker, placeholder, wsforms
+from . import backup, bulk_operations, placeholder, wsforms
 
 _TOOLS = [
     ("1", "Backup"),
-    ("2", "Group Engine"),
+    ("2", "Bulk Operations"),
     ("3", "Migration"),
 ]
 _MANAGE = [
@@ -64,7 +64,7 @@ def run(store: WorkspaceStore, app: AppContext, workspace: Workspace) -> None:
                 WorkspaceApplicationService.connection_status(workspace)
             )
         elif choice == "2":
-            group_checker.run(workspace)
+            bulk_operations.run(workspace)
         elif choice == "3":
             placeholder.coming_soon(Icon.MIGRATION, "Migration", _INTROS["Migration"])
         elif choice == "4":

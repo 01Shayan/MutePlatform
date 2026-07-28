@@ -8,12 +8,12 @@ from telegram import Update
 from telegram.ext import Application, ApplicationBuilder, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, filters
 
 from ...core.logging import get_logger
+from ...services.bulk_operations.group_manager import GroupManagerApplicationService
 from ...services.settings import SettingsApplicationService
-from ...services.group_engine import GroupEngineApplicationService
 from ...services.workspace import WorkspaceApplicationService
 from .auth import OwnerAuthorization
 from .handlers.backup import make_backup_handler
-from .handlers.group_checker import make_group_checker_handler, make_group_checker_text_handler
+from .handlers.group_manager import make_bulk_ops_handler, make_group_manager_text_handler
 from .handlers.navigation import make_callback_handler
 from .handlers.settings import make_settings_handler, make_settings_text_handler
 from .handlers.start import make_start_handler
@@ -31,7 +31,7 @@ def build_bot(
     *,
     workspaces_service: WorkspaceApplicationService | None = None,
     settings_service: SettingsApplicationService | None = None,
-    group_engine_service: GroupEngineApplicationService | None = None,
+    group_manager_service: GroupManagerApplicationService | None = None,
 ) -> Application:
     """Build an owner-only polling application without starting network activity."""
     _ensure_event_loop()
@@ -39,14 +39,14 @@ def build_bot(
     router = Router(sessions)
     workspaces_service = workspaces_service or WorkspaceApplicationService.for_navigation()
     settings_service = settings_service or SettingsApplicationService()
-    group_engine_service = group_engine_service or GroupEngineApplicationService()
+    group_manager_service = group_manager_service or GroupManagerApplicationService()
     application = ApplicationBuilder().token(token).build()
     application.bot_data["telegram_authorization"] = authorization
     application.bot_data["telegram_sessions"] = sessions
     application.bot_data["telegram_router"] = router
     application.bot_data["telegram_workspace_service"] = workspaces_service
     application.bot_data["telegram_settings_service"] = settings_service
-    application.bot_data["telegram_group_engine_service"] = group_engine_service
+    application.bot_data["telegram_group_manager_service"] = group_manager_service
     application.add_handler(CommandHandler("start", make_start_handler(authorization, router)))
     application.add_handler(
         CallbackQueryHandler(
@@ -55,10 +55,10 @@ def build_bot(
     )
     application.add_handler(
         CallbackQueryHandler(
-            make_group_checker_handler(
-                authorization, router, workspaces_service, group_engine_service
+            make_bulk_ops_handler(
+                authorization, router, workspaces_service, group_manager_service
             ),
-            pattern=r"^(group_checker:|group_engine:)",
+            pattern=r"^(bulk:|gm:)",
         )
     )
     application.add_handler(
@@ -77,7 +77,7 @@ def build_bot(
         MessageHandler(
             filters.TEXT & ~filters.COMMAND,
             _make_text_dispatcher(
-                authorization, router, workspaces_service, settings_service, group_engine_service
+                authorization, router, workspaces_service, settings_service, group_manager_service
             ),
         )
     )
@@ -90,13 +90,13 @@ def _make_text_dispatcher(
     router: Router,
     workspaces_service: WorkspaceApplicationService,
     settings_service: SettingsApplicationService,
-    group_engine_service: GroupEngineApplicationService,
+    group_manager_service: GroupManagerApplicationService,
 ):
-    """Route free-text messages to the active wizard/settings/group-checker screen."""
+    """Route free-text messages to the active wizard/settings/group-manager screen."""
     workspace_text = make_workspace_text_handler(authorization, router, workspaces_service)
     settings_text = make_settings_text_handler(authorization, router, settings_service)
-    group_checker_text = make_group_checker_text_handler(
-        authorization, router, workspaces_service, group_engine_service
+    group_manager_text = make_group_manager_text_handler(
+        authorization, router, workspaces_service, group_manager_service
     )
 
     async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -104,7 +104,7 @@ def _make_text_dispatcher(
             return
         if await settings_text(update, context):
             return
-        await group_checker_text(update, context)
+        await group_manager_text(update, context)
 
     return handle
 

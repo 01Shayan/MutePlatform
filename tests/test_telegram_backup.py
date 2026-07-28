@@ -429,7 +429,7 @@ def test_back_from_menu_returns_to_dashboard(tmp_path):
     markup = result.query.edit_message_text.await_args.kwargs["reply_markup"]
     labels = [btn.text for row in markup.inline_keyboard for btn in row]
     assert "Backup" in labels
-    assert "Group Engine" in labels
+    assert "Bulk Operations" in labels
 
 
 def test_back_from_success_keyboard_uses_dashboard_callback():

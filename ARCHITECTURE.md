@@ -79,15 +79,18 @@ Read operations and write operations should remain clearly separated.
 Example:
 
 ```
-Groups
-├── Check
-└── Modify
+Bulk Operations
+└── Group Manager
+      ├── Check
+      └── Actions
 ```
 
-## 5. Shared Group Engine
+## 5. Working Set for Bulk Actions
 
-All future group modifications (Add, Remove, Replace, etc.) must use the same
-underlying engine instead of implementing separate logic.
+All future group modifications (Add, Remove, Replace, etc.) live under
+**Bulk Operations → Group Manager** and share one Working Set produced by Check.
+
+Actions must never re-search users. They consume the current Working Set only.
 
 ## 6. History
 
@@ -180,10 +183,11 @@ not live APIs.
 
 ## 9. Backup is the Source of Truth
 
-Groups
-  ├── Check
-  ├── Modify
-  └── History
+Bulk Operations
+  └── Group Manager
+        ├── Check
+        ├── Working Set
+        └── Actions (Add / Remove / Replace)
 
 Reports
 
@@ -191,7 +195,7 @@ Analytics
 
 must operate from backups whenever possible.
 
-Migration is a separate deferred domain (not part of the Groups module).
+Migration is a separate deferred domain (not part of Bulk Operations).
 
 ---
 
@@ -557,13 +561,13 @@ Result
 → Download
 → Back
 
-Groups
-  ├── Check
-  │     Result → Export (future) → Back
-  ├── Modify
-  │     Result → Back
-  └── History
-        View → Back
+Bulk Operations
+  └── Group Manager
+        ├── Check
+        │     Result → Working Set → Actions → Back
+        └── Actions
+              Add / Remove / Replace Group IDs
+              → Preview → Confirm → Execute → Summary
 
 Migration (deferred — separate domain)
 Summary

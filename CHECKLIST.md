@@ -17,47 +17,39 @@ Tracks progress per version.
 
 ---
 
-## v0.3.0 — Groups Module
+## v0.3.0 — Bulk Operations · Group Manager
 
 **Status:** In Development  
 **Version file:** `0.3.0-dev`
 
-### Foundation
+### Architecture
 
-- [ ] Groups Foundation
-- [ ] Shared Group Operation Engine
-- [ ] Service Layer DTOs and interfaces (CLI + Telegram)
-- [ ] Offline-first / backup-as-source-of-truth where applicable
+- [x] Bulk Operations top-level module
+- [x] Group Manager under Bulk Operations
+- [x] Working Set (replaces manual selection)
+- [x] Check → Working Set → Actions flow (CLI + Telegram)
+- [x] Action plugins scaffolded (Add / Remove / Replace)
 
 ### Check
 
-- [ ] Groups Check — queries and analysis
-- [ ] Integrity / required-groups workflows
-- [ ] CLI Check screens
-- [ ] Telegram Check screens
+- [x] Check Group IDs (Required Groups) — behaviour preserved
+- [x] Working Set includes matched / unmatched / statistics / criteria
 
-### Modify
+### Actions (next)
 
-- [ ] Groups Modify — mutation workflows
-- [ ] Confirmation for destructive or panel-changing operations
-- [ ] CLI Modify screens
-- [ ] Telegram Modify screens
-
-### History
-
-- [ ] Groups History — metadata history (not full datasets)
-- [ ] Logging for group operations
-- [ ] CLI History screens
-- [ ] Telegram History screens
+- [ ] Add Group IDs
+- [ ] Remove Group IDs
+- [ ] Replace Group IDs
 
 ### Quality
 
-- [ ] Tests (service + CLI + Telegram)
-- [ ] Documentation (README · CHANGELOG · ROADMAP · PRODUCT)
+- [ ] Action implementation tests
+- [ ] Documentation kept in sync
 - [ ] Architecture compliance review
 - [ ] Production validation before freeze
 
 ### Out of scope for v0.3.0
 
-- [ ] Migration (deferred — separate domain)
-- [ ] Reports / Analytics (later milestones)
+- [ ] Additional Bulk Operations managers (Expire, Status, …)
+- [ ] Migration (deferred)
+- [ ] Manual user selection (removed by design)

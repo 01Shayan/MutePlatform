@@ -15,19 +15,19 @@ adheres to [Semantic Versioning](https://semver.org/).
 - Backup JSON schema simplified by removing unused runtime fields
   (`admin_id`, `on_hold_timeout`, `on_hold_expire_duration`, `next_plan`).
 - Backup schema version incremented to `0.2`.
-- Group Checker renamed to **Group Engine** (CLI + Telegram entry point).
-- Group Engine menu: Check · Select Users · Add · Remove · Replace · History
-  (Add / Remove / Replace / History are Coming Soon placeholders).
-- Group Engine core workflow infrastructure (session, user selection, operation
-  plugins, shared Preview → Confirm → Execute pipeline).
+- Replaced **Group Engine** with **Bulk Operations → Group Manager**.
+- Introduced **Working Set** (produced by Check; consumed by Actions).
+- Manual user selection removed — Actions only run after a successful Check.
+- Group Manager actions scaffolded: Add / Remove / Replace Group IDs (Coming Soon).
 
 ### Planned
 
-- Groups Foundation
-- Groups Check
-- Groups Modify
+- Add Group IDs
+- Remove Group IDs
+- Replace Group IDs
+- Groups Foundation (as Bulk Operations expands)
 - Groups History
-- Shared Group Operation Engine
+- Shared Group Operation Engine (within Group Manager)
 
 ### Notes
 

@@ -17,9 +17,9 @@ from mute.interfaces.telegram.conversation import (
     cleanup_temporary,
     track_temporary,
 )
-from mute.interfaces.telegram.handlers.group_checker import (
-    make_group_checker_handler,
-    make_group_checker_text_handler,
+from mute.interfaces.telegram.handlers.group_manager import (
+    make_bulk_ops_handler,
+    make_group_manager_text_handler,
 )
 from mute.interfaces.telegram.handlers.workspace import (
     make_workspace_handler,
@@ -266,36 +266,31 @@ def test_workspace_edit_success_cleans_temporary(tmp_path):
     assert "updated successfully" in query.edit_message_text.await_args.args[0]
 
 
-def test_group_checker_input_cleanup_on_result(tmp_path):
+def test_group_manager_input_cleanup_on_check(tmp_path):
     service = _service(tmp_path)
     ws = service.create(
         name="Prod",
         integration="pasarguard",
         connection={"base_url": "https://panel"},
     )
-    # Minimal backup for list/run path is not needed — we jump to text input.
     sessions = SessionManager()
     sessions.get(CHAT_ID).current_workspace = "Prod"
     router = Router(sessions)
     auth = OwnerAuthorization(frozenset({OWNER_ID}))
-    text_h = make_group_checker_text_handler(auth, router, service)
-    cb = make_group_checker_handler(auth, router, service)
+    text_h = make_group_manager_text_handler(auth, router, service)
+    cb = make_bulk_ops_handler(auth, router, service)
     context = _make_context()
 
     begin_temporary(router, CHAT_ID)
     router.remember_message(CHAT_ID, 100)
-    router.group_checker_input(CHAT_ID, "backup_2026-07-15_12-00-00.json")
+    router.gm_check_input(CHAT_ID, "backup_2026-07-15_12-00-00.json")
     sessions.get(CHAT_ID).current_action = "backup_2026-07-15_12-00-00.json"
 
     update, message = _text("1,3", message_id=501)
-    # list_backups will be empty — users=0 still ok for confirmation
     asyncio.run(text_h(update, context))
     assert 501 in sessions.get(CHAT_ID).temporary_messages
-    assert sessions.get(CHAT_ID).current_screen is Screen.GROUP_CHECKER_CONFIRM
+    assert sessions.get(CHAT_ID).current_screen is Screen.GM_CHECK_CONFIRM
 
-    # Cancel back via run should clean temporary replies.
-    update, _ = _callback("group_checker:run")
-    # Need a backup so run doesn't just show empty — empty is fine
     from pathlib import Path
     import json
 
@@ -305,6 +300,7 @@ def test_group_checker_input_cleanup_on_result(tmp_path):
         json.dumps({"metadata": {"created_at": "2026-07-15T12:00:00", "users_count": 0}, "users": []}),
         encoding="utf-8",
     )
+    update, _ = _callback("gm:check")
     asyncio.run(cb(update, context))
     assert sessions.get(CHAT_ID).temporary_messages == []
     deleted = {call.kwargs["message_id"] for call in context.bot.delete_message.await_args_list}

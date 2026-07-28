@@ -1,4 +1,4 @@
-"""Group Engine DTOs — the only types interfaces may consume.
+"""Check DTOs for offline group-membership queries.
 
 Engine-internal models (BackupUser, BackupSnapshot) stay inside the package and are never
 exported through the application service.

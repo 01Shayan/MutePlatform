@@ -443,7 +443,7 @@ def test_application_wraps_corrupt_backup(tmp_path):
 
 
 def test_cli_cancel_confirmation(tmp_path, monkeypatch):
-    from mute.cli.screens import group_checker as screen
+    from mute.cli.screens import group_manager as screen
 
     ws = _workspace(tmp_path)
     _write_backup(ws, "backup_2026-07-15_12-00-00.json", [{"username": "a", "group_ids": []}])
@@ -460,16 +460,20 @@ def test_cli_cancel_confirmation(tmp_path, monkeypatch):
 
 
 def test_cli_operation_error(tmp_path, monkeypatch):
-    from mute.cli.screens import group_checker as screen
+    from mute.cli.screens import group_manager as screen
+    from mute.services.bulk_operations.group_manager import (
+        GroupManagerApplicationService,
+        GroupManagerError,
+    )
 
     ws = _workspace(tmp_path)
     _write_backup(ws, "backup_2026-07-15_12-00-00.json", [{"username": "a", "group_ids": []}])
 
-    class Boom(GroupCheckerApplicationService):
-        def run_query(self, *a, **k):
-            raise GroupCheckerOperationError("boom")
+    class Boom(GroupManagerApplicationService):
+        def run_check(self, *a, **k):
+            raise GroupManagerError("boom")
 
-    monkeypatch.setattr(screen, "GroupCheckerApplicationService", Boom)
+    monkeypatch.setattr(screen, "GroupManagerApplicationService", Boom)
     monkeypatch.setattr(screen.theme, "page", lambda *a, **k: None)
     monkeypatch.setattr(screen.theme, "clear", lambda: None)
     monkeypatch.setattr(screen.theme, "pause", lambda *a, **k: None)

@@ -1,4 +1,4 @@
-# Product Definition — Groups Module
+# Product Definition — Bulk Operations · Group Manager
 
 **Product:** Mute Platform  
 **Milestone:** v0.3.0  
@@ -9,93 +9,77 @@
 
 ## Purpose
 
-The **Groups** module is the next major workspace capability after Backup and the
-early Group Checker release.
+**Bulk Operations** is the top-level home for every future bulk modification feature.
 
-It turns group operations into a first-class domain:
+For this release it contains only:
 
 ```
-Groups
-  ├── Check
-  ├── Modify
-  └── History
+Bulk Operations
+  └── Group Manager
 ```
 
-Operators use Groups to understand panel group membership, apply controlled changes,
-and keep an auditable history — through both CLI and Telegram.
+Group Manager manages users' Required Group IDs through Check → Working Set → Actions.
+
+---
+
+## Core concept — Working Set
+
+Users are **never manually selected**.
+
+1. Check inspects users (read-only).
+2. Check produces a **Working Set** (matched, unmatched, statistics, criteria).
+3. Every Action operates on that Working Set.
+
+Actions must never perform another search.
+
+---
+
+## Group Manager flow
+
+```
+Check Group IDs
+    ↓
+Working Set (results)
+    ↓
+Actions
+  ├── Add Group IDs
+  ├── Remove Group IDs
+  └── Replace Group IDs
+```
+
+Check is always the entry point. Add / Remove / Replace appear only after a successful Check.
 
 ---
 
 ## Product principles
 
-- Telegram mirrors the CLI (same capabilities; UI may differ).
-- All business logic lives in the Service Layer.
-- Offline-first where practical: analysis prefers backups over live APIs.
-- Backup remains the preferred source of truth for Check-style analysis.
+- Telegram mirrors the CLI.
+- Business logic lives in the Service Layer.
+- Offline-first: Check prefers backups over live APIs.
 - History stores metadata, not full datasets.
-- Destructive or panel-changing operations require confirmation.
-- One shared engine powers group operations — no duplicated CLI/Telegram logic.
+- Destructive or panel-changing operations require confirmation (Preview → Confirm → Execute).
 
 ---
 
-## Scope (v0.3.0)
+## Out of scope (this milestone)
 
-### Groups Foundation
-
-Workspace-aware Groups entry point, models, and navigation shared by all
-sub-features.
-
-### Groups Check
-
-Read / analyze group membership and related conditions (for example required
-groups, integrity, matching users). Prefer backup-based analysis.
-
-### Groups Modify
-
-Apply group-related changes through the Service Layer with explicit confirmation
-and clear results.
-
-### Groups History
-
-Record operation metadata per workspace (what ran, when, outcome). Not a dump of
-full user payloads.
-
-### Shared Group Operation Engine
-
-Single engine used by Check and Modify so computation and rules are implemented
-once and reused by every interface.
-
----
-
-## Out of scope (v0.3.0)
-
-| Domain | Status |
-|--------|--------|
+| Idea | Status |
+|------|--------|
+| Expire Manager | Future |
+| Status Manager | Future |
+| Data Limit Manager | Future |
+| Manual / username selection | Removed by design |
 | Migration | Deferred — separate domain |
-| Reports | Later milestone |
-| Analytics | Later milestone |
-| Additional panel integrations | Later milestone |
 
 ---
 
-## Interfaces
+## Next implementation steps
 
-| Interface | Role |
-|-----------|------|
-| CLI | Reference behaviour |
-| Telegram | Exact functional mirror |
+1. Add Group IDs  
+2. Remove Group IDs  
+3. Replace Group IDs  
 
-Both call the same Groups services. Neither owns business rules.
-
----
-
-## Success criteria
-
-- Operators can Check, Modify, and review History for groups inside a workspace.
-- CLI and Telegram expose the same capabilities.
-- Group logic is centralized in services / the shared engine.
-- Tests and docs ship with the feature set.
-- Migration is not started as part of this milestone.
+No other Bulk Operations modules in this milestone.
 
 ---
 

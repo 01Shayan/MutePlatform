@@ -1,7 +1,6 @@
-"""Group Engine application service — offline group queries over backup files.
+"""Offline group-membership query internals used by Group Manager Check.
 
-The Check operation is implemented here today. Future write operations (Add,
-Remove, Replace) must share one engine behind this service boundary.
+Public interfaces should prefer ``bulk_operations.group_manager``.
 """
 
 from .models import (

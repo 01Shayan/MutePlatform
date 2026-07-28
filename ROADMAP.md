@@ -85,24 +85,24 @@ Stable foundation for the next major milestone.
 
 ## v0.3.0 — In Development
 
-**Groups Module**
-
-Workspace-centric group operations domain:
+**Bulk Operations · Group Manager**
 
 ```
-Groups
-  ├── Check
-  ├── Modify
-  └── History
+Bulk Operations
+  └── Group Manager
+        ├── Check Group IDs
+        ├── Working Set
+        └── Actions
+              ├── Add Group IDs
+              ├── Remove Group IDs
+              └── Replace Group IDs
 ```
 
-- Groups Foundation
-- Groups Check
-- Groups Modify
-- Groups History
-- Shared Group Operation Engine
+- Check produces a Working Set (matched / unmatched / statistics / criteria).
+- Actions consume the Working Set only — no manual user selection, no re-search.
+- Add / Remove / Replace are scaffolded (Coming Soon) for the next implementation steps.
 
-Offline-first where possible (backup as source of truth for analysis).
+Offline-first where possible (backup as source of truth for Check).
 Telegram mirrors CLI. Business logic stays in the Service Layer.
 
 ---
