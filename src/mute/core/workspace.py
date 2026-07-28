@@ -94,6 +94,12 @@ def _dir_key(name: str) -> str:
     return _safe_dirname(name).casefold()
 
 
+# Per-workspace backup settings (defaults for new and legacy manifests).
+DEFAULT_MAX_BACKUPS = 10
+DEFAULT_AUTO_BACKUP_ENABLED = False
+DEFAULT_AUTO_BACKUP_INTERVAL = 0  # minutes; 0 means unset while disabled
+
+
 @dataclass
 class Workspace:
     """One working environment: an integration + connection + its own data folders."""
@@ -106,6 +112,9 @@ class Workspace:
     token: str | None = None
     verify_ssl: bool = True
     created_at: str | None = None
+    auto_backup_enabled: bool = DEFAULT_AUTO_BACKUP_ENABLED
+    auto_backup_interval: int = DEFAULT_AUTO_BACKUP_INTERVAL
+    max_backups: int = DEFAULT_MAX_BACKUPS
     root: Path = field(default=WORKSPACES_DIR, repr=False)
     _store: "WorkspaceStore | None" = field(default=None, repr=False, compare=False)
 
@@ -216,6 +225,9 @@ class Workspace:
         }
         data.update({key: getattr(self, key) for key in _CONNECTION_FIELDS})
         data["created_at"] = self.created_at
+        data["auto_backup_enabled"] = bool(self.auto_backup_enabled)
+        data["auto_backup_interval"] = int(self.auto_backup_interval)
+        data["max_backups"] = int(self.max_backups)
         return data
 
     @classmethod
@@ -230,6 +242,11 @@ class Workspace:
             token=data.get("token"),
             verify_ssl=bool(data.get("verify_ssl", True)),
             created_at=data.get("created_at"),
+            auto_backup_enabled=bool(data.get("auto_backup_enabled", DEFAULT_AUTO_BACKUP_ENABLED)),
+            auto_backup_interval=int(
+                data.get("auto_backup_interval", DEFAULT_AUTO_BACKUP_INTERVAL) or 0
+            ),
+            max_backups=int(data.get("max_backups", DEFAULT_MAX_BACKUPS) or DEFAULT_MAX_BACKUPS),
         )
 
 

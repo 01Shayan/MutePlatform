@@ -65,6 +65,18 @@ class Router:
     def backup_delete_all_confirmation(self, chat_id: int) -> TelegramSession:
         return self.go_to(chat_id, Screen.BACKUP_DELETE_ALL_CONFIRM, action="delete-all")
 
+    def backup_auto(self, chat_id: int) -> TelegramSession:
+        return self.go_to(chat_id, Screen.BACKUP_AUTO)
+
+    def backup_auto_interval(self, chat_id: int) -> TelegramSession:
+        return self.go_to(chat_id, Screen.BACKUP_AUTO_INTERVAL)
+
+    def backup_max(self, chat_id: int) -> TelegramSession:
+        return self.go_to(chat_id, Screen.BACKUP_MAX)
+
+    def backup_max_input(self, chat_id: int) -> TelegramSession:
+        return self.go_to(chat_id, Screen.BACKUP_MAX_INPUT)
+
     def bulk_ops(self, chat_id: int) -> TelegramSession:
         return self.go_to(chat_id, Screen.BULK_OPS)
 

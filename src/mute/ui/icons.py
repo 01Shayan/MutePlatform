@@ -34,6 +34,9 @@ class Icon:
     ACTIONS = "🛠"
     REVIEW = "📋"
     DOWNLOAD = "⬇"
+    EDIT = "✏"
+    PAUSE = "⏸"
+    ENABLE = "✅"
 
     # Status
     LOADING = "⏳"

@@ -1,7 +1,7 @@
-"""📦 Backup screen — the first implementation of the Job Lifecycle.
+"""📦 Backup screen — Create Export, Auto Backup, Max Backups, History, Delete.
 
-The menu label is "Backup", but the workflow uses the more accurate verb "Export". All data
-is read from and written to the active **workspace**.
+All data is read from and written to the active **workspace**. Manual and Auto Backup
+share :meth:`BackupApplicationService.create_export` (create + retention cleanup).
 """
 
 from __future__ import annotations
@@ -10,16 +10,40 @@ from rich.prompt import Prompt
 
 from ...core.timefmt import relative_time
 from ...core.workspace import Workspace
-from ...services.backup import BackupApplicationService, BackupOperationError, archive_display, format_duration, format_size
+from ...services.backup import (
+    BackupApplicationService,
+    BackupOperationError,
+    archive_display,
+    format_auto_backup_lines,
+    format_duration,
+    format_max_backups_lines,
+    format_size,
+    parse_auto_backup_interval,
+    parse_max_backups,
+)
 from ...services.workspace import ConnectionStatus, WorkspaceApplicationService
 from ...ui.copy import (
     BTN_BACK,
+    BTN_CHANGE_INTERVAL,
+    BTN_CHANGE_LIMIT,
+    BTN_DISABLE,
+    BTN_ENABLE,
+    MENU_AUTO_BACKUP,
     MENU_BACKUP_HISTORY,
     MENU_CREATE_EXPORT,
     MENU_DELETE_ALL,
     MENU_DELETE_BACKUP,
     MENU_DELETE_SINGLE,
+    MENU_MAX_BACKUPS,
+    MSG_INVALID_INTERVAL,
+    MSG_INVALID_MAX_BACKUPS,
+    PROMPT_BACKUP_INTERVAL,
+    PROMPT_BACKUP_INTERVAL_EXAMPLE,
+    PROMPT_MAX_BACKUPS,
+    PROMPT_MAX_BACKUPS_EXAMPLE,
+    TITLE_AUTO_BACKUP,
     TITLE_BACKUP,
+    TITLE_MAX_BACKUPS,
 )
 from .. import theme
 from ..job import Job, JobError, JobOutcome, ProgressReporter, run_job
@@ -74,8 +98,10 @@ class BackupJob(Job):
 
 _ACTIONS = [
     ("1", MENU_CREATE_EXPORT),
-    ("2", MENU_BACKUP_HISTORY),
-    ("3", MENU_DELETE_BACKUP),
+    ("2", MENU_AUTO_BACKUP),
+    ("3", MENU_MAX_BACKUPS),
+    ("4", MENU_BACKUP_HISTORY),
+    ("5", MENU_DELETE_BACKUP),
     ("0", BTN_BACK),
 ]
 
@@ -200,6 +226,107 @@ def _delete_all_backups(workspace: Workspace) -> None:
     theme.notify_success(f"{Icon.SUCCESS} All backup files deleted successfully.")
 
 
+def _ask_interval() -> int | None:
+    theme.page(
+        TITLE_AUTO_BACKUP,
+        theme.body_text([PROMPT_BACKUP_INTERVAL, "", PROMPT_BACKUP_INTERVAL_EXAMPLE]),
+    )
+    raw = Prompt.ask("\nInterval", default="").strip()
+    if not raw:
+        return None
+    try:
+        return parse_auto_backup_interval(raw)
+    except ValueError:
+        theme.notify_error(MSG_INVALID_INTERVAL)
+        theme.pause()
+        return None
+
+
+def _ask_max_backups() -> int | None:
+    theme.page(
+        TITLE_MAX_BACKUPS,
+        theme.body_text([PROMPT_MAX_BACKUPS, "", PROMPT_MAX_BACKUPS_EXAMPLE]),
+    )
+    raw = Prompt.ask("\nLimit", default="").strip()
+    if not raw:
+        return None
+    try:
+        return parse_max_backups(raw)
+    except ValueError:
+        theme.notify_error(MSG_INVALID_MAX_BACKUPS)
+        theme.pause()
+        return None
+
+
+def _auto_backup_menu(workspace: Workspace) -> Workspace:
+    workspaces = WorkspaceApplicationService.for_navigation()
+    while True:
+        # Reload so CLI sees the latest persisted settings.
+        current = workspaces.workspace(workspace.name) or workspace
+        enabled = bool(current.auto_backup_enabled)
+        actions = (
+            [("1", BTN_CHANGE_INTERVAL), ("2", BTN_DISABLE), ("0", BTN_BACK)]
+            if enabled
+            else [("1", BTN_ENABLE), ("0", BTN_BACK)]
+        )
+        theme.page(
+            TITLE_AUTO_BACKUP,
+            theme.body_text(format_auto_backup_lines(current)[1:]),
+            "",
+            theme.option_menu(actions),
+        )
+        choice = Prompt.ask(
+            "\nSelect an option",
+            choices=[item[0] for item in actions],
+            default="0",
+            show_choices=False,
+        )
+        if choice == "0":
+            return current
+        if not enabled and choice == "1":
+            interval = _ask_interval()
+            if interval is None:
+                continue
+            current = workspaces.save_backup_settings(
+                current, auto_backup_enabled=True, auto_backup_interval=interval
+            )
+            continue
+        if enabled and choice == "1":
+            interval = _ask_interval()
+            if interval is None:
+                continue
+            current = workspaces.save_backup_settings(current, auto_backup_interval=interval)
+            continue
+        if enabled and choice == "2":
+            current = workspaces.save_backup_settings(current, auto_backup_enabled=False)
+            continue
+
+
+def _max_backups_menu(workspace: Workspace) -> Workspace:
+    workspaces = WorkspaceApplicationService.for_navigation()
+    while True:
+        current = workspaces.workspace(workspace.name) or workspace
+        theme.page(
+            TITLE_MAX_BACKUPS,
+            theme.body_text(format_max_backups_lines(current)[1:]),
+            "",
+            theme.option_menu([("1", BTN_CHANGE_LIMIT), ("0", BTN_BACK)]),
+        )
+        choice = Prompt.ask(
+            "\nSelect an option",
+            choices=["1", "0"],
+            default="0",
+            show_choices=False,
+        )
+        if choice == "0":
+            return current
+        limit = _ask_max_backups()
+        if limit is None:
+            continue
+        current = workspaces.save_backup_settings(current, max_backups=limit)
+        BackupApplicationService().enforce_retention(current)
+
+
 def _status_panel(workspace: Workspace):
     latest = BackupApplicationService().latest(workspace)
     if latest is None:
@@ -244,6 +371,10 @@ def run(workspace: Workspace) -> None:
         if choice == "1":
             run_job(BackupJob(), workspace)
         elif choice == "2":
-            _browse_backups(workspace)
+            workspace = _auto_backup_menu(workspace)
         elif choice == "3":
+            workspace = _max_backups_menu(workspace)
+        elif choice == "4":
+            _browse_backups(workspace)
+        elif choice == "5":
             _delete_menu(workspace)

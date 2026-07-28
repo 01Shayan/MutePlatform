@@ -21,6 +21,8 @@ adheres to [Semantic Versioning](https://semver.org/).
   (All Snapshot Users / Users with Groups / Users without Groups).
 - **Shared Group Selector (v1.4):** one reusable selector for CLI + Telegram;
   no more “Enter Group IDs” typing for known Groups.
+- **Per-workspace Auto Backup & Max Backups:** independent interval/retention per Workspace;
+  Manual and Auto share one create → (Telegram send) → cleanup pipeline.
 - UI hides Include / Exclude / ANY / ALL; Query Engine unchanged.
 - UI terminology: **Matched Users**; Review reads as plain English.
 - Group Manager: Catalog → Snapshot → Select Target → Matched Users → Review → Execute → Report.

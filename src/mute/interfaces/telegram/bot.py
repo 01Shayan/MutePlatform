@@ -12,12 +12,13 @@ from ...services.bulk_operations.group_manager import GroupManagerApplicationSer
 from ...services.settings import SettingsApplicationService
 from ...services.workspace import WorkspaceApplicationService
 from .auth import OwnerAuthorization
-from .handlers.backup import make_backup_handler
+from .handlers.backup import make_backup_handler, make_backup_text_handler
 from .handlers.group_manager import make_bulk_ops_handler, make_group_manager_text_handler
 from .handlers.navigation import make_callback_handler
 from .handlers.settings import make_settings_handler, make_settings_text_handler
 from .handlers.start import make_start_handler
 from .handlers.workspace import make_workspace_handler, make_workspace_text_handler
+from .auto_backup import start_auto_backup_loop
 from .messages import friendly_error
 from .router import Router
 from .session import SessionManager
@@ -40,7 +41,12 @@ def build_bot(
     workspaces_service = workspaces_service or WorkspaceApplicationService.for_navigation()
     settings_service = settings_service or SettingsApplicationService()
     group_manager_service = group_manager_service or GroupManagerApplicationService()
-    application = ApplicationBuilder().token(token).build()
+    application = (
+        ApplicationBuilder()
+        .token(token)
+        .post_init(start_auto_backup_loop)
+        .build()
+    )
     application.bot_data["telegram_authorization"] = authorization
     application.bot_data["telegram_sessions"] = sessions
     application.bot_data["telegram_router"] = router
@@ -92,9 +98,10 @@ def _make_text_dispatcher(
     settings_service: SettingsApplicationService,
     group_manager_service: GroupManagerApplicationService,
 ):
-    """Route free-text messages to the active wizard/settings/group-manager screen."""
+    """Route free-text messages to the active wizard/settings/backup/group-manager screen."""
     workspace_text = make_workspace_text_handler(authorization, router, workspaces_service)
     settings_text = make_settings_text_handler(authorization, router, settings_service)
+    backup_text = make_backup_text_handler(authorization, router, workspaces_service)
     group_manager_text = make_group_manager_text_handler(
         authorization, router, workspaces_service, group_manager_service
     )
@@ -103,6 +110,8 @@ def _make_text_dispatcher(
         if await workspace_text(update, context):
             return
         if await settings_text(update, context):
+            return
+        if await backup_text(update, context):
             return
         await group_manager_text(update, context)
 

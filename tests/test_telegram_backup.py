@@ -376,7 +376,10 @@ def test_create_export_edits_progress_stages_and_shows_result(tmp_path, monkeypa
         progress("Exporting users", 2, 2)  # Writing backup…
         return summary
 
-    fake_service = SimpleNamespace(create_export=fake_create_export)
+    fake_service = SimpleNamespace(
+        create_export=fake_create_export,
+        download_archive=lambda workspace, name: None,
+    )
     monkeypatch.setattr(backup_handler_module, "BackupApplicationService", lambda: fake_service)
 
     context = _make_context()
@@ -404,7 +407,12 @@ def test_create_export_failure_shows_error(tmp_path, monkeypatch):
         raise BackupOperationError("panel unreachable")
 
     monkeypatch.setattr(
-        backup_handler_module, "BackupApplicationService", lambda: SimpleNamespace(create_export=fake_create_export)
+        backup_handler_module,
+        "BackupApplicationService",
+        lambda: SimpleNamespace(
+            create_export=fake_create_export,
+            download_archive=lambda workspace, name: None,
+        ),
     )
 
     context = _make_context()

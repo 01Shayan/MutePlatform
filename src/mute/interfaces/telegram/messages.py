@@ -32,6 +32,10 @@ from ...ui.copy import (
     MENU_SETTINGS,
     MSG_BACKUP_DONE,
     MSG_SELECT_AT_LEAST_ONE_GROUP,
+    PROMPT_BACKUP_INTERVAL,
+    PROMPT_BACKUP_INTERVAL_EXAMPLE,
+    PROMPT_MAX_BACKUPS,
+    PROMPT_MAX_BACKUPS_EXAMPLE,
     REPORT_DURATION,
     REPORT_FAILED,
     REPORT_MATCHED,
@@ -52,9 +56,11 @@ from ...ui.copy import (
     TARGET_REQUIRE_ANY,
     TARGET_SELECT_GROUPS,
     TARGET_TITLE,
+    TITLE_AUTO_BACKUP,
     TITLE_BACKUP,
     TITLE_BULK_OPS,
     TITLE_HOME,
+    TITLE_MAX_BACKUPS,
     TITLE_SETTINGS,
 )
 from ...services.bulk_operations.group_manager.session import GroupManagerSession
@@ -135,6 +141,40 @@ def backup_status(latest, *, workspace: str) -> str:
         f"({latest.created_at:%Y-%m-%d %H:%M:%S})\n"
         f"Users: {latest.users}\n"
         f"Archive Size: {format_size(latest.size_bytes)}"
+    )
+
+
+def auto_backup_status(workspace) -> str:
+    from ...services.backup import format_auto_backup_lines
+
+    return "\n".join(format_auto_backup_lines(workspace))
+
+
+def max_backups_status(workspace) -> str:
+    from ...services.backup import format_max_backups_lines
+
+    return "\n".join(format_max_backups_lines(workspace))
+
+
+def ask_backup_interval() -> str:
+    return "\n".join(
+        [
+            TITLE_AUTO_BACKUP,
+            "",
+            PROMPT_BACKUP_INTERVAL,
+            PROMPT_BACKUP_INTERVAL_EXAMPLE,
+        ]
+    )
+
+
+def ask_max_backups() -> str:
+    return "\n".join(
+        [
+            TITLE_MAX_BACKUPS,
+            "",
+            PROMPT_MAX_BACKUPS,
+            PROMPT_MAX_BACKUPS_EXAMPLE,
+        ]
     )
 
 

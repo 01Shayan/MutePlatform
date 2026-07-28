@@ -114,10 +114,36 @@ class WorkspaceApplicationService:
     def update(self, workspace: Workspace, *, name: str, integration: str, connection: dict) -> Workspace | None:
         if name != workspace.name and not self.store.rename(workspace.name, name):
             return None
-        updated = Workspace(name=name, integration=integration, created_at=workspace.created_at, **connection)
+        updated = Workspace(
+            name=name,
+            integration=integration,
+            created_at=workspace.created_at,
+            auto_backup_enabled=workspace.auto_backup_enabled,
+            auto_backup_interval=workspace.auto_backup_interval,
+            max_backups=workspace.max_backups,
+            **connection,
+        )
         self.store.save(updated)
         self.store.set_active(updated.name)
         return updated
+
+    def save_backup_settings(
+        self,
+        workspace: Workspace,
+        *,
+        auto_backup_enabled: bool | None = None,
+        auto_backup_interval: int | None = None,
+        max_backups: int | None = None,
+    ) -> Workspace:
+        """Persist per-workspace Auto Backup / Max Backups settings."""
+        if auto_backup_enabled is not None:
+            workspace.auto_backup_enabled = bool(auto_backup_enabled)
+        if auto_backup_interval is not None:
+            workspace.auto_backup_interval = int(auto_backup_interval)
+        if max_backups is not None:
+            workspace.max_backups = int(max_backups)
+        self.store.save(workspace)
+        return workspace
 
     def delete(self, workspace: Workspace) -> bool:
         return self.store.delete(workspace.name)

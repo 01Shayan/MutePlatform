@@ -12,7 +12,7 @@ from ...core.integrations import integration_name
 from ...core.history import record_job
 from ...core.logging import get_logger
 from ...core.timefmt import relative_time
-from ...core.workspace import Workspace
+from ...core.workspace import DEFAULT_MAX_BACKUPS, Workspace
 from ...integrations.pasarguard.backup import LATEST_FILENAME, BackupService, LatestBackup, latest_backup
 from ...integrations.pasarguard.client import PasarGuardError, create_client
 
@@ -22,6 +22,11 @@ class BackupOperationError(Exception):
 
 
 logger = get_logger("backup")
+
+MIN_AUTO_BACKUP_INTERVAL = 1
+MAX_AUTO_BACKUP_INTERVAL = 4320  # 3 days
+MIN_MAX_BACKUPS = 1
+MAX_MAX_BACKUPS = 100
 
 
 @dataclass(frozen=True)
@@ -58,7 +63,7 @@ class BackupDownload:
 
 
 class BackupApplicationService:
-    """Coordinates export, archive inspection, and archive deletion for one workspace."""
+    """Coordinates export, archive inspection, retention, and archive deletion."""
 
     def prepare_export(self, workspace: Workspace) -> list[tuple[str, str]]:
         client = create_client(workspace)
@@ -75,6 +80,10 @@ class BackupApplicationService:
         ]
 
     def create_export(self, workspace: Workspace, progress=None) -> BackupSummary:
+        """Create a backup, then enforce Max Backups retention for this workspace.
+
+        Manual and Auto Backup both call this single pipeline entry point.
+        """
         try:
             result = BackupService(create_client(workspace), workspace, base_dir=workspace.backups_dir).run(progress)
         except PasarGuardError as exc:
@@ -88,7 +97,46 @@ class BackupApplicationService:
             record_job(summary.history, jobs_dir=workspace.history_dir)
         except OSError as exc:  # History is best-effort and must not fail an export.
             logger.warning("Could not record job history: %s", exc)
+        self.enforce_retention(workspace)
         return summary
+
+    def enforce_retention(self, workspace: Workspace) -> int:
+        """Keep only the newest ``max_backups`` archives in this workspace. Returns deleted count."""
+        limit = _clamp_max_backups(workspace.max_backups)
+        archives = self.archives(workspace)  # newest first
+        deleted = 0
+        for archive in archives[limit:]:
+            try:
+                archive.path.unlink(missing_ok=True)
+                deleted += 1
+            except OSError as exc:
+                logger.warning("Could not delete old backup '%s': %s", archive.path, exc)
+        if deleted:
+            self._resync_latest(workspace)
+            logger.info(
+                "Backup retention for '%s': kept %d, deleted %d",
+                workspace.name,
+                limit,
+                deleted,
+            )
+        return deleted
+
+    def is_auto_backup_due(self, workspace: Workspace, *, now: datetime | None = None) -> bool:
+        """True when Auto Backup is enabled and the interval has elapsed since the latest backup."""
+        if not workspace.auto_backup_enabled:
+            return False
+        interval = int(workspace.auto_backup_interval or 0)
+        if interval < MIN_AUTO_BACKUP_INTERVAL:
+            return False
+        latest = self.latest(workspace)
+        if latest is None:
+            return True
+        current = now or datetime.now()
+        age_minutes = (current - latest.created_at).total_seconds() / 60.0
+        return age_minutes >= interval
+
+    def due_auto_backup_workspaces(self, workspaces: list[Workspace]) -> list[Workspace]:
+        return [workspace for workspace in workspaces if self.is_auto_backup_due(workspace)]
 
     def latest(self, workspace: Workspace) -> LatestBackup | None:
         return latest_backup(workspace.backups_dir)
@@ -145,6 +193,76 @@ class BackupApplicationService:
             return created_at, users
         except (json.JSONDecodeError, OSError, KeyError, TypeError, ValueError):
             return datetime.fromtimestamp(path.stat().st_mtime), None
+
+
+def parse_auto_backup_interval(raw: str) -> int:
+    """Parse and validate Auto Backup interval (minutes). Raises ValueError if invalid."""
+    try:
+        value = int(str(raw).strip())
+    except (TypeError, ValueError) as exc:
+        raise ValueError("invalid") from exc
+    if value < MIN_AUTO_BACKUP_INTERVAL or value > MAX_AUTO_BACKUP_INTERVAL:
+        raise ValueError("invalid")
+    return value
+
+
+def parse_max_backups(raw: str) -> int:
+    """Parse and validate Max Backups. Raises ValueError if invalid."""
+    try:
+        value = int(str(raw).strip())
+    except (TypeError, ValueError) as exc:
+        raise ValueError("invalid") from exc
+    if value < MIN_MAX_BACKUPS or value > MAX_MAX_BACKUPS:
+        raise ValueError("invalid")
+    return value
+
+
+def format_auto_backup_lines(workspace: Workspace) -> list[str]:
+    """Shared Auto Backup status body for CLI and Telegram."""
+    from ...ui.copy import (
+        DIVIDER,
+        LABEL_INTERVAL,
+        LABEL_STATUS,
+        STATUS_AUTO_DISABLED,
+        STATUS_AUTO_ENABLED,
+        TITLE_AUTO_BACKUP,
+    )
+
+    enabled = bool(workspace.auto_backup_enabled)
+    interval = int(workspace.auto_backup_interval or 0)
+    lines = [
+        TITLE_AUTO_BACKUP,
+        LABEL_STATUS,
+        STATUS_AUTO_ENABLED if enabled else STATUS_AUTO_DISABLED,
+        LABEL_INTERVAL,
+    ]
+    if enabled and interval >= MIN_AUTO_BACKUP_INTERVAL:
+        unit = "minute" if interval == 1 else "minutes"
+        lines.append(f"{interval} {unit}")
+    else:
+        lines.append("—")
+    lines.append(DIVIDER)
+    return lines
+
+
+def format_max_backups_lines(workspace: Workspace) -> list[str]:
+    """Shared Max Backups status body for CLI and Telegram."""
+    from ...ui.copy import DIVIDER, LABEL_CURRENT_LIMIT, TITLE_MAX_BACKUPS
+
+    return [
+        TITLE_MAX_BACKUPS,
+        LABEL_CURRENT_LIMIT,
+        str(_clamp_max_backups(workspace.max_backups)),
+        DIVIDER,
+    ]
+
+
+def _clamp_max_backups(value: int | None) -> int:
+    try:
+        parsed = int(value if value is not None else DEFAULT_MAX_BACKUPS)
+    except (TypeError, ValueError):
+        parsed = DEFAULT_MAX_BACKUPS
+    return max(MIN_MAX_BACKUPS, min(MAX_MAX_BACKUPS, parsed))
 
 
 def format_size(num_bytes: int) -> str:

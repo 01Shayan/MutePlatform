@@ -7,12 +7,17 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from ...ui.copy import (
     BTN_BACK,
     BTN_CANCEL,
+    BTN_CHANGE_INTERVAL,
+    BTN_CHANGE_LIMIT,
     BTN_CONFIRM,
+    BTN_DISABLE,
     BTN_DOWNLOAD_REPORT,
+    BTN_ENABLE,
     BTN_NO,
     BTN_YES,
     MENU_ABOUT,
     MENU_ADD_WORKSPACE,
+    MENU_AUTO_BACKUP,
     MENU_BACKUP,
     MENU_BACKUP_HISTORY,
     MENU_BULK_OPS,
@@ -26,6 +31,7 @@ from ...ui.copy import (
     MENU_DOWNLOAD_BACKUP,
     MENU_EDIT_WORKSPACE,
     MENU_GROUP_MANAGER,
+    MENU_MAX_BACKUPS,
     MENU_MIGRATION,
     MENU_MY_WORKSPACES,
     MENU_REFRESH_SNAPSHOT,
@@ -137,9 +143,35 @@ def backup_menu_keyboard() -> InlineKeyboardMarkup:
     return inline_keyboard(
         [
             [(MENU_CREATE_EXPORT, "backup:create")],
+            [(MENU_AUTO_BACKUP, "backup:auto")],
+            [(MENU_MAX_BACKUPS, "backup:max")],
             [(MENU_BACKUP_HISTORY, "backup:history")],
             [(MENU_DELETE_BACKUP, "backup:delete")],
             [(BTN_BACK, "backup:dashboard")],
+        ]
+    )
+
+
+def auto_backup_keyboard(*, enabled: bool) -> InlineKeyboardMarkup:
+    if enabled:
+        rows = [
+            [(BTN_CHANGE_INTERVAL, "backup:auto:interval")],
+            [(BTN_DISABLE, "backup:auto:disable")],
+            [(BTN_BACK, "backup:menu")],
+        ]
+    else:
+        rows = [
+            [(BTN_ENABLE, "backup:auto:enable")],
+            [(BTN_BACK, "backup:menu")],
+        ]
+    return inline_keyboard(rows)
+
+
+def max_backups_keyboard() -> InlineKeyboardMarkup:
+    return inline_keyboard(
+        [
+            [(BTN_CHANGE_LIMIT, "backup:max:change")],
+            [(BTN_BACK, "backup:menu")],
         ]
     )
 

@@ -42,6 +42,25 @@ __all__ = [
     "MENU_DELETE_SINGLE",
     "MENU_DELETE_ALL",
     "MENU_DOWNLOAD_BACKUP",
+    "MENU_AUTO_BACKUP",
+    "MENU_MAX_BACKUPS",
+    "TITLE_AUTO_BACKUP",
+    "TITLE_MAX_BACKUPS",
+    "LABEL_STATUS",
+    "LABEL_INTERVAL",
+    "LABEL_CURRENT_LIMIT",
+    "BTN_ENABLE",
+    "BTN_DISABLE",
+    "BTN_CHANGE_INTERVAL",
+    "BTN_CHANGE_LIMIT",
+    "STATUS_AUTO_ENABLED",
+    "STATUS_AUTO_DISABLED",
+    "PROMPT_BACKUP_INTERVAL",
+    "PROMPT_BACKUP_INTERVAL_EXAMPLE",
+    "PROMPT_MAX_BACKUPS",
+    "PROMPT_MAX_BACKUPS_EXAMPLE",
+    "MSG_INVALID_INTERVAL",
+    "MSG_INVALID_MAX_BACKUPS",
     "MSG_BACKUP_DONE",
     "MSG_BACKUP_LOADING_USERS",
     "MSG_BACKUP_WRITING",
@@ -165,6 +184,31 @@ MENU_DELETE_BACKUP = f"{Icon.FAILED} Delete Backup"
 MENU_DELETE_SINGLE = "Delete Single Backup"
 MENU_DELETE_ALL = "Delete All Backups"
 MENU_DOWNLOAD_BACKUP = f"{Icon.DOWNLOAD} Download Backup"
+MENU_AUTO_BACKUP = f"{Icon.BACKUP} Auto Backup"
+MENU_MAX_BACKUPS = f"{Icon.BACKUP} Max Backups"
+TITLE_AUTO_BACKUP = MENU_AUTO_BACKUP
+TITLE_MAX_BACKUPS = MENU_MAX_BACKUPS
+LABEL_STATUS = "Status"
+LABEL_INTERVAL = "Interval"
+LABEL_CURRENT_LIMIT = "Current Limit"
+BTN_ENABLE = f"{Icon.ENABLE} Enable"
+BTN_DISABLE = f"{Icon.PAUSE} Disable"
+BTN_CHANGE_INTERVAL = f"{Icon.EDIT} Change Interval"
+BTN_CHANGE_LIMIT = f"{Icon.EDIT} Change Limit"
+STATUS_AUTO_ENABLED = f"{Icon.SUCCESS} Enabled"
+STATUS_AUTO_DISABLED = f"{Icon.FAILED} Disabled"
+PROMPT_BACKUP_INTERVAL = "Enter backup interval (minutes)"
+PROMPT_BACKUP_INTERVAL_EXAMPLE = "Example:\n30"
+PROMPT_MAX_BACKUPS = "Enter maximum number of backups"
+PROMPT_MAX_BACKUPS_EXAMPLE = "Example:\n10"
+MSG_INVALID_INTERVAL = (
+    f"{Icon.FAILED} Invalid interval.\n"
+    "Please enter a value between 1 and 4320 minutes."
+)
+MSG_INVALID_MAX_BACKUPS = (
+    f"{Icon.FAILED} Invalid value.\n"
+    "Please enter a number between 1 and 100."
+)
 MSG_BACKUP_DONE = f"{Icon.SUCCESS} Backup completed successfully."
 MSG_BACKUP_LOADING_USERS = f"{Icon.LOADING} Loading users..."
 MSG_BACKUP_WRITING = f"{Icon.LOADING} Writing backup..."
