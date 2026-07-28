@@ -16,18 +16,24 @@ adheres to [Semantic Versioning](https://semver.org/).
   (`admin_id`, `on_hold_timeout`, `on_hold_expire_duration`, `next_plan`).
 - Backup schema version incremented to `0.2`.
 - Replaced **Group Engine** with **Bulk Operations → Group Manager**.
-- Introduced **Working Set** (produced by Check; consumed by Actions).
-- Manual user selection removed — Actions only run after a successful Check.
-- Group Manager actions scaffolded: Add / Remove / Replace Group IDs (Coming Soon).
+- Platform **Design System v1.0**: shared `mute.ui` copy/icons; Telegram mirrors CLI labels.
+- **Target Selection UX (v1.3):** 🎯 Select Target Users rule builder
+  (All Snapshot Users / Users with Groups / Users without Groups).
+- **Shared Group Selector (v1.4):** one reusable selector for CLI + Telegram;
+  no more “Enter Group IDs” typing for known Groups.
+- UI hides Include / Exclude / ANY / ALL; Query Engine unchanged.
+- UI terminology: **Matched Users**; Review reads as plain English.
+- Group Manager: Catalog → Snapshot → Select Target → Matched Users → Review → Execute → Report.
+- Telegram mirrors CLI (shared labels / workflow).
+- Snapshot is RAM-only; refreshed only via **Refresh Snapshot** or re-enter.
+- Actions: ➕ Add / ➖ Remove / 🔁 Replace Groups (continue on failure; no rollback).
+- Execution Reports under `reports/` with rolling retention (latest 3).
 
 ### Planned
 
-- Add Group IDs
-- Remove Group IDs
-- Replace Group IDs
-- Groups Foundation (as Bulk Operations expands)
-- Groups History
-- Shared Group Operation Engine (within Group Manager)
+- Additional Bulk Operations managers (Status, Expire, Data Limit, …)
+- Groups Foundation expansions as more managers land
+- Finish migrating remaining wizard/confirm strings onto `mute.ui`
 
 ### Notes
 

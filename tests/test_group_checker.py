@@ -442,52 +442,5 @@ def test_application_wraps_corrupt_backup(tmp_path):
         )
 
 
-def test_cli_cancel_confirmation(tmp_path, monkeypatch):
-    from mute.cli.screens import group_manager as screen
-
-    ws = _workspace(tmp_path)
-    _write_backup(ws, "backup_2026-07-15_12-00-00.json", [{"username": "a", "group_ids": []}])
-    monkeypatch.setattr(screen.theme, "page", lambda *a, **k: None)
-    monkeypatch.setattr(screen.theme, "clear", lambda: None)
-    monkeypatch.setattr(screen.theme, "pause", lambda *a, **k: None)
-    monkeypatch.setattr(screen.theme, "notify_info", lambda *a, **k: None)
-    monkeypatch.setattr(screen.console, "print", lambda *a, **k: None)
-    monkeypatch.setattr(screen.Confirm, "ask", staticmethod(lambda *a, **k: False))
-    prompts = iter(["1", "1", "1", "1", "0"])
-    monkeypatch.setattr(screen.Prompt, "ask", staticmethod(lambda *a, **k: next(prompts)))
-    screen.run(ws)
-    assert list(ws.history_dir.glob("*_group_checker.json")) == []
-
-
-def test_cli_operation_error(tmp_path, monkeypatch):
-    from mute.cli.screens import group_manager as screen
-    from mute.services.bulk_operations.group_manager import (
-        GroupManagerApplicationService,
-        GroupManagerError,
-    )
-
-    ws = _workspace(tmp_path)
-    _write_backup(ws, "backup_2026-07-15_12-00-00.json", [{"username": "a", "group_ids": []}])
-
-    class Boom(GroupManagerApplicationService):
-        def run_check(self, *a, **k):
-            raise GroupManagerError("boom")
-
-    monkeypatch.setattr(screen, "GroupManagerApplicationService", Boom)
-    monkeypatch.setattr(screen.theme, "page", lambda *a, **k: None)
-    monkeypatch.setattr(screen.theme, "clear", lambda: None)
-    monkeypatch.setattr(screen.theme, "pause", lambda *a, **k: None)
-    monkeypatch.setattr(screen.console, "print", lambda *a, **k: None)
-
-    class _Status:
-        def __enter__(self):
-            return self
-
-        def __exit__(self, *args):
-            return False
-
-    monkeypatch.setattr(screen.console, "status", lambda *a, **k: _Status())
-    monkeypatch.setattr(screen.Confirm, "ask", staticmethod(lambda *a, **k: True))
-    prompts = iter(["1", "1", "1", "1", "0"])
-    monkeypatch.setattr(screen.Prompt, "ask", staticmethod(lambda *a, **k: next(prompts)))
-    screen.run(ws)
+# CLI Group Manager no longer uses the backup Required Groups confirmation flow.
+# See tests/test_group_manager.py and tests/test_group_checker_cli.py.

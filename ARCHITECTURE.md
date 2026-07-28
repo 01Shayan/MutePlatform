@@ -81,16 +81,28 @@ Example:
 ```
 Bulk Operations
 └── Group Manager
-      ├── Check
-      └── Actions
+      ├── Group Catalog
+      ├── Snapshot
+      ├── Filter Users → Working Set
+      └── Actions → Review → Execute
 ```
 
 ## 5. Working Set for Bulk Actions
 
-All future group modifications (Add, Remove, Replace, etc.) live under
-**Bulk Operations → Group Manager** and share one Working Set produced by Check.
+All group modifications (Add, Remove, Replace) live under
+**Bulk Operations → Group Manager**. Filter runs only against an in-memory Snapshot
+and produces a Working Set. Actions consume that Working Set only — never re-search.
 
-Actions must never re-search users. They consume the current Working Set only.
+Group Catalog (available Group IDs) is independent of Snapshot and must be shown
+whenever the user enters Group IDs.
+
+Telegram must mirror CLI exactly (menu hierarchy, workflow, labels).
+
+Each Bulk Operations manager is isolated and stores only the minimum Snapshot fields
+it needs (Group Manager: username + group_ids).
+
+Snapshot never auto-refreshes. Use Refresh Snapshot or re-enter Group Manager.
+Execute requires a unified Review screen and confirmation. Dry Run is not used.
 
 ## 6. History
 
@@ -179,21 +191,23 @@ operate from backups,
 
 not live APIs.
 
+Exception — **Group Manager** uses a live Panel Snapshot for Query/Actions
+(in-memory only; destroyed on leave). Backup remains the source of truth for
+Backup, offline Group Checker history, and other read-only analysis.
+
 ---
 
-## 9. Backup is the Source of Truth
+## 9. Backup is the Source of Truth (with Group Manager exception)
 
 Bulk Operations
   └── Group Manager
-        ├── Check
-        ├── Working Set
+        ├── Catalog
+        ├── Snapshot (RAM; Refresh Snapshot)
+        ├── Filter → Matched Users
         └── Actions (Add / Remove / Replace)
+              → Review → Confirm → Execute → Report
 
-Reports
-
-Analytics
-
-must operate from backups whenever possible.
+Backup / Reports / Analytics operate from backups whenever possible.
 
 Migration is a separate deferred domain (not part of Bulk Operations).
 
@@ -563,11 +577,10 @@ Result
 
 Bulk Operations
   └── Group Manager
-        ├── Check
-        │     Result → Working Set → Actions → Back
+        ├── Snapshot → Filter → Matched Users
         └── Actions
-              Add / Remove / Replace Group IDs
-              → Preview → Confirm → Execute → Summary
+              Add / Remove / Replace Groups
+              → Review → Confirm → Execute → Report (download)
 
 Migration (deferred — separate domain)
 Summary

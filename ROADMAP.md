@@ -85,25 +85,22 @@ Stable foundation for the next major milestone.
 
 ## v0.3.0 — In Development
 
-**Bulk Operations · Group Manager**
+**Bulk Operations · Group Manager (architecture v1.2)**
 
 ```
 Bulk Operations
   └── Group Manager
-        ├── Check Group IDs
-        ├── Working Set
-        └── Actions
-              ├── Add Group IDs
-              ├── Remove Group IDs
-              └── Replace Group IDs
+        ├── Group Catalog
+        ├── Snapshot (RAM; Refresh Snapshot)
+        ├── 🔎 Filter Users
+        ├── 👥 View Matched Users
+        └── 🛠 Actions → 📋 Review → 🚀 Execute → 📄 Report
 ```
 
-- Check produces a Working Set (matched / unmatched / statistics / criteria).
-- Actions consume the Working Set only — no manual user selection, no re-search.
-- Add / Remove / Replace are scaffolded (Coming Soon) for the next implementation steps.
-
-Offline-first where possible (backup as source of truth for Check).
-Telegram mirrors CLI. Business logic stays in the Service Layer.
+- Telegram mirrors CLI exactly (shared copy / workflow).
+- Dry Run removed; Execute only; mandatory Review + Confirm.
+- Snapshot never auto-refreshes; manual Refresh clears filter / working set.
+- Actions continue on failure; latest 3 reports retained.
 
 ---
 

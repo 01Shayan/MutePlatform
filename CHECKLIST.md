@@ -17,39 +17,36 @@ Tracks progress per version.
 
 ---
 
-## v0.3.0 — Bulk Operations · Group Manager
+## v0.3.0 — Bulk Operations · Group Manager (architecture v1.2)
 
 **Status:** In Development  
 **Version file:** `0.3.0-dev`
 
 ### Architecture
 
-- [x] Bulk Operations top-level module
-- [x] Group Manager under Bulk Operations
-- [x] Working Set (replaces manual selection)
-- [x] Check → Working Set → Actions flow (CLI + Telegram)
-- [x] Action plugins scaffolded (Add / Remove / Replace)
+- [x] Telegram mirrors CLI (shared labels / workflow)
+- [x] Group Catalog + Snapshot (RAM only)
+- [x] 🔎 Filter Users / 👥 View Matched Users / 🔄 Refresh Snapshot
+- [x] Unified 📋 Review → ✅ Confirm → 🚀 Execute
+- [x] Dry Run removed
+- [x] Execution Report (rolling latest 3)
+- [x] CLI + Telegram wired
 
-### Check
+### Actions
 
-- [x] Check Group IDs (Required Groups) — behaviour preserved
-- [x] Working Set includes matched / unmatched / statistics / criteria
+- [x] ➕ Add Groups
+- [x] ➖ Remove Groups
+- [x] 🔁 Replace Groups
 
-### Actions (next)
+## Design System (v1.0)
 
-- [ ] Add Group IDs
-- [ ] Remove Group IDs
-- [ ] Replace Group IDs
-
-### Quality
-
-- [ ] Action implementation tests
-- [ ] Documentation kept in sync
-- [ ] Architecture compliance review
-- [ ] Production validation before freeze
+- [x] Shared `mute.ui` package (icons + copy + layout)
+- [x] CLI and Telegram consume the same labels
+- [x] Terminology: Matched Users (UI) / Working Set (code)
+- [x] `docs/DESIGN_SYSTEM.md`
+- [ ] Remaining wizard / long-form confirm copy migration (optional polish)
 
 ### Out of scope for v0.3.0
 
-- [ ] Additional Bulk Operations managers (Expire, Status, …)
+- [ ] Additional managers (Expire, Status, …)
 - [ ] Migration (deferred)
-- [ ] Manual user selection (removed by design)

@@ -165,7 +165,7 @@ def test_history_lists_archives(tmp_path):
     markup = result.query.edit_message_text.await_args.kwargs["reply_markup"]
     labels = [btn.text for row in markup.inline_keyboard for btn in row]
     assert "backup_2026-07-11_12-00-00.json" in labels
-    assert "Back" in labels
+    assert "🏠 Back" in labels
 
 
 def test_select_archive_opens_details(tmp_path):
@@ -182,7 +182,7 @@ def test_select_archive_opens_details(tmp_path):
     assert "Archive Size:" in text
     markup = result.query.edit_message_text.await_args.kwargs["reply_markup"]
     labels = [btn.text for row in markup.inline_keyboard for btn in row]
-    assert labels == ["Download Backup", "Delete Backup", "Back"]
+    assert labels == ["⬇ Download Backup", "❌ Delete Backup", "🏠 Back"]
     callbacks = [btn.callback_data for row in markup.inline_keyboard for btn in row]
     assert callbacks == [
         f"backup:download:{path.name}",
@@ -247,7 +247,7 @@ def test_delete_from_details_confirm_no_returns_to_details(tmp_path):
     asyncio.run(handler(update, _make_context()))
     assert sessions.get(CHAT_ID).current_screen is Screen.BACKUP_DELETE_CONFIRM
     markup = query.edit_message_text.await_args.kwargs["reply_markup"]
-    no_callback = markup.inline_keyboard[1][0].callback_data
+    no_callback = markup.inline_keyboard[0][1].callback_data
     assert no_callback == f"backup:archive:{path.name}"
 
     query.data = no_callback
@@ -384,15 +384,15 @@ def test_create_export_edits_progress_stages_and_shows_result(tmp_path, monkeypa
 
     texts = [call.kwargs["text"] for call in context.bot.edit_message_text.await_args_list]
     assert any("Connecting…" in t for t in texts)
-    assert any("Loading users…" in t for t in texts)
-    assert any("Writing backup…" in t for t in texts)
-    assert any("Backup completed successfully." in t for t in texts)
+    assert any("Loading users" in t for t in texts)
+    assert any("Writing backup" in t for t in texts)
+    assert any("Backup completed successfully" in t for t in texts)
     # Success screen: Download Backup + Back to workspace dashboard.
     final = context.bot.edit_message_text.await_args_list[-1]
     rows = final.kwargs["reply_markup"].inline_keyboard
-    assert rows[0][0].text == "Download Backup"
+    assert rows[0][0].text == "⬇ Download Backup"
     assert rows[0][0].callback_data == f"backup:download:{summary.archive_name}"
-    assert rows[1][0].text == "Back"
+    assert rows[1][0].text == "🏠 Back"
     assert rows[1][0].callback_data == "backup:dashboard"
     assert result.sessions.get(CHAT_ID).current_screen is Screen.BACKUP
 
@@ -428,8 +428,8 @@ def test_back_from_menu_returns_to_dashboard(tmp_path):
     assert result.ws.name in text
     markup = result.query.edit_message_text.await_args.kwargs["reply_markup"]
     labels = [btn.text for row in markup.inline_keyboard for btn in row]
-    assert "Backup" in labels
-    assert "Bulk Operations" in labels
+    assert "📦 Backup" in labels
+    assert "🛠 Bulk Operations" in labels
 
 
 def test_back_from_success_keyboard_uses_dashboard_callback():
@@ -437,7 +437,7 @@ def test_back_from_success_keyboard_uses_dashboard_callback():
 
     markup = backup_result_keyboard("backup_2026-07-15_12-00-00.json")
     rows = markup.inline_keyboard
-    assert rows[0][0].text == "Download Backup"
+    assert rows[0][0].text == "⬇ Download Backup"
     assert rows[0][0].callback_data == "backup:download:backup_2026-07-15_12-00-00.json"
-    assert rows[1][0].text == "Back"
+    assert rows[1][0].text == "🏠 Back"
     assert rows[1][0].callback_data == "backup:dashboard"

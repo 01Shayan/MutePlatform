@@ -17,10 +17,6 @@ from mute.interfaces.telegram.conversation import (
     cleanup_temporary,
     track_temporary,
 )
-from mute.interfaces.telegram.handlers.group_manager import (
-    make_bulk_ops_handler,
-    make_group_manager_text_handler,
-)
 from mute.interfaces.telegram.handlers.workspace import (
     make_workspace_handler,
     make_workspace_text_handler,
@@ -264,47 +260,6 @@ def test_workspace_edit_success_cleans_temporary(tmp_path):
     deleted = {call.kwargs["message_id"] for call in context.bot.delete_message.await_args_list}
     assert 401 in deleted
     assert "updated successfully" in query.edit_message_text.await_args.args[0]
-
-
-def test_group_manager_input_cleanup_on_check(tmp_path):
-    service = _service(tmp_path)
-    ws = service.create(
-        name="Prod",
-        integration="pasarguard",
-        connection={"base_url": "https://panel"},
-    )
-    sessions = SessionManager()
-    sessions.get(CHAT_ID).current_workspace = "Prod"
-    router = Router(sessions)
-    auth = OwnerAuthorization(frozenset({OWNER_ID}))
-    text_h = make_group_manager_text_handler(auth, router, service)
-    cb = make_bulk_ops_handler(auth, router, service)
-    context = _make_context()
-
-    begin_temporary(router, CHAT_ID)
-    router.remember_message(CHAT_ID, 100)
-    router.gm_check_input(CHAT_ID, "backup_2026-07-15_12-00-00.json")
-    sessions.get(CHAT_ID).current_action = "backup_2026-07-15_12-00-00.json"
-
-    update, message = _text("1,3", message_id=501)
-    asyncio.run(text_h(update, context))
-    assert 501 in sessions.get(CHAT_ID).temporary_messages
-    assert sessions.get(CHAT_ID).current_screen is Screen.GM_CHECK_CONFIRM
-
-    from pathlib import Path
-    import json
-
-    directory = ws.backups_dir / "2026" / "07"
-    directory.mkdir(parents=True, exist_ok=True)
-    (directory / "backup_2026-07-15_12-00-00.json").write_text(
-        json.dumps({"metadata": {"created_at": "2026-07-15T12:00:00", "users_count": 0}, "users": []}),
-        encoding="utf-8",
-    )
-    update, _ = _callback("gm:check")
-    asyncio.run(cb(update, context))
-    assert sessions.get(CHAT_ID).temporary_messages == []
-    deleted = {call.kwargs["message_id"] for call in context.bot.delete_message.await_args_list}
-    assert 501 in deleted
 
 
 def test_begin_temporary_resets_list():
