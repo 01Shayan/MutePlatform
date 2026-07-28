@@ -112,10 +112,19 @@ def test_menu_opens(tmp_path):
     text = result.query.edit_message_text.await_args.args[0]
     assert "Group Engine" in text
     assert "1. Check" in text
-    assert "5. History" in text
+    assert "2. Select Users" in text
+    assert "6. History" in text
     markup = result.query.edit_message_text.await_args.kwargs["reply_markup"]
     labels = [button.text for row in markup.inline_keyboard for button in row]
-    assert labels == ["Check", "Add", "Remove", "Replace", "History", "Back"]
+    assert labels == [
+        "Check",
+        "Select Users",
+        "Add",
+        "Remove",
+        "Replace",
+        "History",
+        "Back",
+    ]
 
 
 def test_coming_soon_operations(tmp_path):
@@ -124,6 +133,58 @@ def test_coming_soon_operations(tmp_path):
         text = result.query.edit_message_text.await_args.args[0]
         assert "Coming soon" in text
         assert operation.capitalize() in text
+
+
+def test_select_all_users_updates_session(tmp_path):
+    ws = _make_workspace(tmp_path)
+    _write_backup(
+        ws,
+        "backup_2026-07-15_12-00-00.json",
+        [{"username": "alice", "group_ids": [1]}, {"username": "bob", "group_ids": [2]}],
+    )
+    from mute.services.group_engine import GroupEngineApplicationService
+
+    engine = GroupEngineApplicationService()
+    sessions = SessionManager()
+    sessions.get(CHAT_ID).current_workspace = ws.name
+    router = Router(sessions)
+    handler = make_group_checker_handler(
+        OwnerAuthorization(frozenset({OWNER_ID})),
+        router,
+        FakeWorkspaceService(ws),
+        engine,
+    )
+    update, query = _make_callback("group_engine:all:backup_2026-07-15_12-00-00.json")
+    asyncio.run(handler(update, _make_context()))
+    session = engine.session(session_key=str(CHAT_ID))
+    assert session is not None
+    assert session.selected_count == 2
+    text = query.edit_message_text.await_args.args[0]
+    assert "Selected users: 2" in text
+
+
+def test_leave_dashboard_clears_engine_session(tmp_path):
+    from mute.services.group_engine import GroupEngineApplicationService, SelectedUser
+
+    ws = _make_workspace(tmp_path)
+    engine = GroupEngineApplicationService()
+    engine.begin_session(ws, session_key=str(CHAT_ID))
+    engine.set_selected_users(
+        [SelectedUser(username="alice")], session_key=str(CHAT_ID)
+    )
+    sessions = SessionManager()
+    sessions.get(CHAT_ID).current_workspace = ws.name
+    router = Router(sessions)
+    handler = make_group_checker_handler(
+        OwnerAuthorization(frozenset({OWNER_ID})),
+        router,
+        FakeWorkspaceService(ws),
+        engine,
+    )
+    update, query = _make_callback("group_checker:dashboard")
+    asyncio.run(handler(update, _make_context()))
+    assert engine.session(session_key=str(CHAT_ID)) is None
+    assert sessions.get(CHAT_ID).current_screen is Screen.DASHBOARD
 
 
 def test_run_with_no_backups(tmp_path):

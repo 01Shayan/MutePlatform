@@ -173,6 +173,7 @@ def group_checker_menu_keyboard() -> InlineKeyboardMarkup:
     return inline_keyboard(
         [
             [("Check", "group_checker:run")],
+            [("Select Users", "group_engine:select")],
             [("Add", "group_checker:soon:add")],
             [("Remove", "group_checker:soon:remove")],
             [("Replace", "group_checker:soon:replace")],
@@ -185,6 +186,35 @@ def group_checker_menu_keyboard() -> InlineKeyboardMarkup:
 def group_checker_coming_soon_keyboard() -> InlineKeyboardMarkup:
     return inline_keyboard([[("Back", "group_checker:menu")]])
 
+
+def group_engine_select_keyboard() -> InlineKeyboardMarkup:
+    return inline_keyboard(
+        [
+            [("Select from backup", "group_engine:select-backup")],
+            [("Clear selection", "group_engine:clear")],
+            [("Back", "group_checker:menu")],
+        ]
+    )
+
+
+def group_engine_backup_keyboard(backup_names: list[str]) -> InlineKeyboardMarkup:
+    rows = [[(name, f"group_engine:backup:{name}")] for name in backup_names]
+    rows.append([("Back", "group_engine:select")])
+    return inline_keyboard(rows)
+
+
+def group_engine_backup_mode_keyboard(backup_name: str) -> InlineKeyboardMarkup:
+    return inline_keyboard(
+        [
+            [("Select all users", f"group_engine:all:{backup_name}")],
+            [("Enter usernames", f"group_engine:names:{backup_name}")],
+            [("Back", "group_engine:select-backup")],
+        ]
+    )
+
+
+def group_engine_names_keyboard() -> InlineKeyboardMarkup:
+    return inline_keyboard([[("Cancel", "group_engine:select")]])
 
 def group_checker_backups_keyboard(backup_names: list[str]) -> InlineKeyboardMarkup:
     rows = [[(name, f"group_checker:backup:{name}")] for name in backup_names]

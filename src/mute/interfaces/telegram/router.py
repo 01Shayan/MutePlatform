@@ -88,6 +88,18 @@ class Router:
     def group_checker_result(self, chat_id: int) -> TelegramSession:
         return self.go_to(chat_id, Screen.GROUP_CHECKER_RESULT)
 
+    def group_engine_select(self, chat_id: int) -> TelegramSession:
+        return self.go_to(chat_id, Screen.GROUP_ENGINE_SELECT)
+
+    def group_engine_select_backup(self, chat_id: int) -> TelegramSession:
+        return self.go_to(chat_id, Screen.GROUP_ENGINE_SELECT_BACKUP)
+
+    def group_engine_select_mode(self, chat_id: int, backup_name: str) -> TelegramSession:
+        return self.go_to(chat_id, Screen.GROUP_ENGINE_SELECT_MODE, action=backup_name)
+
+    def group_engine_select_names(self, chat_id: int, backup_name: str) -> TelegramSession:
+        return self.go_to(chat_id, Screen.GROUP_ENGINE_SELECT_NAMES, action=backup_name)
+
     def remember_message(self, chat_id: int, message_id: int | None) -> TelegramSession:
         return self._sessions.remember_message(chat_id, message_id)
 

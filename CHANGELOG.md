@@ -16,8 +16,10 @@ adheres to [Semantic Versioning](https://semver.org/).
   (`admin_id`, `on_hold_timeout`, `on_hold_expire_duration`, `next_plan`).
 - Backup schema version incremented to `0.2`.
 - Group Checker renamed to **Group Engine** (CLI + Telegram entry point).
-- Group Engine menu: Check · Add · Remove · Replace · History
+- Group Engine menu: Check · Select Users · Add · Remove · Replace · History
   (Add / Remove / Replace / History are Coming Soon placeholders).
+- Group Engine core workflow infrastructure (session, user selection, operation
+  plugins, shared Preview → Confirm → Execute pipeline).
 
 ### Planned
 

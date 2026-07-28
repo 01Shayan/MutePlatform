@@ -1,4 +1,4 @@
-"""Group Engine Telegram interface — pure interface over GroupCheckerApplicationService."""
+"""Group Engine Telegram interface — Check + shared write-session workflow."""
 
 from __future__ import annotations
 
@@ -17,6 +17,7 @@ from ....services.group_checker import (
     GroupQueryType,
     parse_group_ids,
 )
+from ....services.group_engine import GroupEngineApplicationService, GroupEngineError
 from ....services.workspace import WorkspaceApplicationService
 from ..auth import OwnerAuthorization
 from ..conversation import begin_temporary, cleanup_temporary, track_temporary
@@ -29,6 +30,10 @@ from ..keyboards import (
     group_checker_menu_keyboard,
     group_checker_query_keyboard,
     group_checker_result_keyboard,
+    group_engine_backup_keyboard,
+    group_engine_backup_mode_keyboard,
+    group_engine_names_keyboard,
+    group_engine_select_keyboard,
 )
 from ..messages import (
     dashboard,
@@ -43,6 +48,12 @@ from ..messages import (
     group_checker_result,
     group_checker_select_backup,
     group_checker_select_query,
+    group_engine_ask_usernames,
+    group_engine_backup_mode,
+    group_engine_error,
+    group_engine_select_backup,
+    group_engine_select_users,
+    group_engine_selection_result,
 )
 from ..router import Router
 from ..session import Screen
@@ -50,14 +61,18 @@ from ..session import Screen
 logger = get_logger("telegram")
 
 _SOON_OPERATIONS = frozenset({"add", "remove", "replace", "history"})
+_WRITE_OPS = frozenset({"add", "remove", "replace"})
 
 
 def make_group_checker_handler(
     authorization: OwnerAuthorization,
     router: Router,
     workspaces_service: WorkspaceApplicationService,
+    engine_service: GroupEngineApplicationService | None = None,
 ):
-    """Build the callback handler for every ``group_checker:*`` action."""
+    """Build the callback handler for ``group_checker:*`` and ``group_engine:*`` actions."""
+
+    engine_service = engine_service or GroupEngineApplicationService()
 
     async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if not authorization.allows_update(update) or update.callback_query is None:
@@ -72,15 +87,26 @@ def make_group_checker_handler(
             await query.answer("Workspace is no longer available.", show_alert=True)
             return
 
-        service = GroupCheckerApplicationService()
+        checker = GroupCheckerApplicationService()
+        session_key = str(chat.id)
         data = query.data or ""
 
         if data == "group_checker:menu":
             await query.answer()
+            engine = engine_service.ensure_session(workspace, session_key=session_key)
             router.group_checker(chat.id)
-            await _safe_edit(query, group_checker_menu(workspace.name), group_checker_menu_keyboard())
+            await _safe_edit(
+                query,
+                group_checker_menu(
+                    workspace.name,
+                    selected_count=engine.selected_count,
+                    backup_name=engine.backup_name,
+                ),
+                group_checker_menu_keyboard(),
+            )
         elif data == "group_checker:dashboard":
             await query.answer()
+            engine_service.leave_session(session_key=session_key)
             router.dashboard(chat.id, workspace.name)
             item = workspaces_service.navigation_item(workspace.name)
             await _safe_edit(query, dashboard(item), dashboard_keyboard())
@@ -89,15 +115,103 @@ def make_group_checker_handler(
             operation = data.removeprefix("group_checker:soon:")
             if operation not in _SOON_OPERATIONS:
                 return
+            description = None
+            if operation in _WRITE_OPS:
+                info = engine_service.operation(operation)
+                description = info.description or None
             await _safe_edit(
                 query,
-                group_checker_coming_soon(operation),
+                group_checker_coming_soon(operation, description=description),
                 group_checker_coming_soon_keyboard(),
             )
+        elif data == "group_engine:select":
+            await query.answer()
+            engine = engine_service.ensure_session(workspace, session_key=session_key)
+            router.group_engine_select(chat.id)
+            await _safe_edit(
+                query,
+                group_engine_select_users(engine.selected_count),
+                group_engine_select_keyboard(),
+            )
+        elif data == "group_engine:clear":
+            await query.answer("Selection cleared.")
+            engine_service.ensure_session(workspace, session_key=session_key)
+            engine_service.clear_selected_users(session_key=session_key)
+            router.group_checker(chat.id)
+            await _safe_edit(
+                query,
+                group_checker_menu(workspace.name, selected_count=0),
+                group_checker_menu_keyboard(),
+            )
+        elif data == "group_engine:select-backup":
+            await query.answer()
+            engine_service.ensure_session(workspace, session_key=session_key)
+            sources = checker.list_backups(workspace)
+            if not sources:
+                await _safe_edit(
+                    query, group_checker_no_backups(), group_engine_select_keyboard()
+                )
+                return
+            router.group_engine_select_backup(chat.id)
+            await _safe_edit(
+                query,
+                group_engine_select_backup(sources),
+                group_engine_backup_keyboard([source.name for source in sources]),
+            )
+        elif data.startswith("group_engine:backup:"):
+            await query.answer()
+            backup_name = data.removeprefix("group_engine:backup:")
+            sources = checker.list_backups(workspace)
+            source = next((item for item in sources if item.name == backup_name), None)
+            users = source.users if source is not None else 0
+            router.group_engine_select_mode(chat.id, backup_name)
+            await _safe_edit(
+                query,
+                group_engine_backup_mode(backup_name, users),
+                group_engine_backup_mode_keyboard(backup_name),
+            )
+        elif data.startswith("group_engine:all:"):
+            await query.answer()
+            backup_name = data.removeprefix("group_engine:all:")
+            engine_service.ensure_session(workspace, session_key=session_key)
+            try:
+                engine = engine_service.select_all_users_from_backup(
+                    workspace, backup_name, session_key=session_key
+                )
+            except GroupEngineError as exc:
+                await _safe_edit(
+                    query, group_engine_error(str(exc)), group_engine_select_keyboard()
+                )
+                return
+            router.group_checker(chat.id)
+            await _safe_edit(
+                query,
+                group_checker_menu(
+                    workspace.name,
+                    selected_count=engine.selected_count,
+                    backup_name=engine.backup_name,
+                )
+                + "\n\n"
+                + group_engine_selection_result(engine.selected_count),
+                group_checker_menu_keyboard(),
+            )
+        elif data.startswith("group_engine:names:"):
+            await query.answer()
+            backup_name = data.removeprefix("group_engine:names:")
+            begin_temporary(router, chat.id)
+            session = router.group_engine_select_names(chat.id, backup_name)
+            if query.message is not None:
+                router.remember_message(chat.id, query.message.message_id)
+            await _safe_edit(
+                query,
+                group_engine_ask_usernames(backup_name),
+                group_engine_names_keyboard(),
+            )
+            session.current_action = backup_name
         elif data == "group_checker:run":
             await query.answer()
             await cleanup_temporary(context.bot, router, chat.id)
-            await _show_backup_list(query, router, service, workspace, chat.id)
+            await _show_backup_list(query, router, checker, workspace, chat.id)
         elif data.startswith("group_checker:backup:"):
             await query.answer()
             backup_name = data.removeprefix("group_checker:backup:")
@@ -119,11 +233,10 @@ def make_group_checker_handler(
                 group_checker_ask_group_ids(backup_name),
                 group_checker_input_keyboard(),
             )
-            # Keep session action as backup name for the text handler.
             session.current_action = backup_name
         elif data == "group_checker:confirm":
             await query.answer()
-            await _run_confirmed(update, context, router, service, workspace, chat.id)
+            await _run_confirmed(update, context, router, checker, workspace, chat.id)
 
     return handle
 
@@ -132,8 +245,11 @@ def make_group_checker_text_handler(
     authorization: OwnerAuthorization,
     router: Router,
     workspaces_service: WorkspaceApplicationService,
+    engine_service: GroupEngineApplicationService | None = None,
 ):
-    """Accept free-form group ID messages while the chat waits on the input screen."""
+    """Accept free-form text for Check group IDs or Select Users usernames."""
+
+    engine_service = engine_service or GroupEngineApplicationService()
 
     async def handle(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if not authorization.allows_update(update) or update.effective_message is None:
@@ -142,6 +258,13 @@ def make_group_checker_text_handler(
         if chat is None:
             return
         session = router.session(chat.id)
+
+        if session.current_screen is Screen.GROUP_ENGINE_SELECT_NAMES:
+            await _handle_username_selection(
+                update, context, router, workspaces_service, engine_service, chat.id
+            )
+            return
+
         if session.current_screen is not Screen.GROUP_CHECKER_INPUT:
             return
 
@@ -183,6 +306,52 @@ def make_group_checker_text_handler(
         router.remember_message(chat.id, sent.message_id)
 
     return handle
+
+
+async def _handle_username_selection(
+    update, context, router, workspaces_service, engine_service, chat_id
+) -> None:
+    workspace = _resolve_workspace(router, workspaces_service, chat_id)
+    if workspace is None:
+        return
+    session = router.session(chat_id)
+    backup_name = session.current_action or ""
+    raw = (update.effective_message.text or "").strip()
+    track_temporary(router, chat_id, update.effective_message.message_id)
+    names = [part for part in raw.replace(",", " ").split() if part]
+    session_key = str(chat_id)
+    engine_service.ensure_session(workspace, session_key=session_key)
+    try:
+        engine = engine_service.select_users_by_username(
+            workspace, backup_name, names, session_key=session_key
+        )
+    except GroupEngineError as exc:
+        sent = await update.effective_message.reply_text(group_engine_error(str(exc)))
+        track_temporary(router, chat_id, sent.message_id)
+        return
+
+    await cleanup_temporary(context.bot, router, chat_id, keep=session.last_message_id)
+    router.group_checker(chat_id)
+    text = group_checker_menu(
+        workspace.name,
+        selected_count=engine.selected_count,
+        backup_name=engine.backup_name,
+    )
+    text = f"{text}\n\n{group_engine_selection_result(engine.selected_count)}"
+    message_id = session.last_message_id
+    if message_id is not None:
+        try:
+            await context.bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=message_id,
+                text=text,
+                reply_markup=group_checker_menu_keyboard(),
+            )
+            return
+        except BadRequest:
+            pass
+    sent = await update.effective_message.reply_text(text, reply_markup=group_checker_menu_keyboard())
+    router.remember_message(chat_id, sent.message_id)
 
 
 def _resolve_workspace(

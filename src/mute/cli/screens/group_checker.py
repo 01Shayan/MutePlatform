@@ -1,7 +1,8 @@
 """👥 Group Engine screen — central entry for all group operations.
 
-Check reuses the existing offline Required Groups query. Add / Remove / Replace /
-History are menu placeholders until the shared write workflow is implemented.
+Check reuses the existing offline Required Groups query. Write operations use the
+shared Group Engine session and pipeline; Add / Remove / Replace remain Coming Soon
+plugins until their business logic is implemented.
 """
 
 from __future__ import annotations
@@ -20,78 +21,164 @@ from ...services.group_checker import (
     format_group_ids,
     parse_group_ids,
 )
+from ...services.group_engine import (
+    GroupEngineApplicationService,
+    GroupEngineError,
+    GroupEngineSession,
+)
 from .. import theme
 from ..theme import Icon, console
 from . import placeholder
 
 _ACTIONS = [
     ("1", "Check"),
-    ("2", "Add"),
-    ("3", "Remove"),
-    ("4", "Replace"),
-    ("5", "History"),
+    ("2", "Select Users"),
+    ("3", "Add"),
+    ("4", "Remove"),
+    ("5", "Replace"),
+    ("6", "History"),
     ("0", "Back"),
 ]
 
-_COMING_SOON = {
-    "2": (
-        "Add",
-        [
-            "Add groups to selected users.",
-            "Will follow Select → Preview → Confirmation → Execute → Summary.",
-        ],
-    ),
-    "3": (
-        "Remove",
-        [
-            "Remove groups from selected users.",
-            "Will follow Select → Preview → Confirmation → Execute → Summary.",
-        ],
-    ),
-    "4": (
-        "Replace",
-        [
-            "Replace group membership for selected users.",
-            "Will follow Select → Preview → Confirmation → Execute → Summary.",
-        ],
-    ),
-    "5": (
-        "History",
-        [
-            "Review metadata for past group operations in this workspace.",
-        ],
-    ),
+_WRITE_OPS = {
+    "3": "add",
+    "4": "remove",
+    "5": "replace",
 }
 
 
 def run(workspace: Workspace) -> None:
-    service = GroupCheckerApplicationService()
-    while True:
-        theme.page(
-            "Group Engine",
-            theme.body_text(
-                [
-                    "Central home for all group operations.",
-                    "Check membership offline, or modify groups through one shared engine.",
-                ]
-            ),
-            "",
-            theme.option_menu(_ACTIONS),
-            icon=Icon.GROUPS,
-        )
-        choice = Prompt.ask(
-            "\nSelect an option",
-            choices=[item[0] for item in _ACTIONS],
-            default="0",
-            show_choices=False,
-        )
-        if choice == "0":
-            return
-        if choice == "1":
-            _run_check_flow(service, workspace)
-        elif choice in _COMING_SOON:
-            title, description = _COMING_SOON[choice]
-            placeholder.coming_soon(Icon.GROUPS, title, description)
+    checker = GroupCheckerApplicationService()
+    engine = GroupEngineApplicationService()
+    engine.begin_session(workspace)
+    try:
+        while True:
+            session = engine.require_session()
+            theme.page(
+                "Group Engine",
+                theme.body_text(_engine_intro(session)),
+                "",
+                theme.option_menu(_ACTIONS),
+                icon=Icon.GROUPS,
+            )
+            choice = Prompt.ask(
+                "\nSelect an option",
+                choices=[item[0] for item in _ACTIONS],
+                default="0",
+                show_choices=False,
+            )
+            if choice == "0":
+                return
+            if choice == "1":
+                _run_check_flow(checker, workspace)
+            elif choice == "2":
+                _select_users_flow(engine, checker, workspace)
+            elif choice in _WRITE_OPS:
+                _write_operation_placeholder(engine, _WRITE_OPS[choice])
+            elif choice == "6":
+                placeholder.coming_soon(
+                    Icon.GROUPS,
+                    "History",
+                    ["Review metadata for past group operations in this workspace."],
+                )
+    finally:
+        engine.leave_session()
+
+
+def _engine_intro(session: GroupEngineSession) -> list[str]:
+    lines = [
+        "Central home for all group operations.",
+        "Write ops share one session: Select Users → Operation → Preview → Confirm → Execute.",
+    ]
+    if session.has_selection:
+        backup = f" from {session.backup_name}" if session.backup_name else ""
+        lines.append(f"Selected users: {session.selected_count}{backup}")
+    else:
+        lines.append("Selected users: none")
+    return lines
+
+
+def _write_operation_placeholder(engine: GroupEngineApplicationService, operation_id: str) -> None:
+    info = engine.operation(operation_id)
+    if info.available:
+        # Future: enter configure → preview → confirm → execute via the engine.
+        theme.notify_info(f"{info.label} is available but not wired in this screen yet.")
+        theme.pause()
+        return
+    description = [info.description] if info.description else [f"{info.label} is not ready yet."]
+    description.append("Will use the shared Group Engine workflow when implemented.")
+    placeholder.coming_soon(Icon.GROUPS, info.label, description)
+
+
+def _select_users_flow(
+    engine: GroupEngineApplicationService,
+    checker: GroupCheckerApplicationService,
+    workspace: Workspace,
+) -> None:
+    session = engine.require_session()
+    actions = [("1", "Select from backup"), ("2", "Clear selection"), ("0", "Back")]
+    theme.page(
+        "Select Users",
+        theme.body_text(
+            [
+                "Selection persists until you leave Group Engine.",
+                f"Currently selected: {session.selected_count}",
+            ]
+        ),
+        "",
+        theme.option_menu(actions),
+        icon=Icon.GROUPS,
+    )
+    choice = Prompt.ask(
+        "\nSelect an option",
+        choices=[item[0] for item in actions],
+        default="0",
+        show_choices=False,
+    )
+    if choice == "0":
+        return
+    if choice == "2":
+        engine.clear_selected_users()
+        theme.notify_success("Selection cleared.")
+        theme.pause()
+        return
+
+    backup = _select_backup(checker, workspace)
+    if backup is None:
+        return
+
+    theme.page(
+        "Select Users",
+        theme.body_text(
+            [
+                f"Backup: {backup.name}",
+                f"Users in backup: {backup.users}",
+                "1. Select all users",
+                "2. Enter usernames",
+                "0. Back",
+            ]
+        ),
+        icon=Icon.GROUPS,
+    )
+    mode = Prompt.ask("\nSelect an option", choices=["1", "2", "0"], default="0", show_choices=False)
+    if mode == "0":
+        return
+    try:
+        if mode == "1":
+            session = engine.select_all_users_from_backup(workspace, backup.name)
+        else:
+            console.print()
+            console.print("[muted]Enter usernames separated by commas or spaces.[/muted]")
+            raw = Prompt.ask("\nUsernames", default="").strip()
+            names = [part for part in raw.replace(",", " ").split() if part]
+            session = engine.select_users_by_username(workspace, backup.name, names)
+    except GroupEngineError as exc:
+        theme.notify_error(str(exc))
+        theme.pause()
+        return
+
+    theme.notify_success(f"Selected {session.selected_count} user(s).")
+    theme.pause()
 
 
 def _run_check_flow(service: GroupCheckerApplicationService, workspace: Workspace) -> None:

@@ -162,20 +162,27 @@ def friendly_error() -> str:
     return "Something went wrong. Please try again."
 
 
-def group_checker_menu(workspace: str) -> str:
+def group_checker_menu(workspace: str, *, selected_count: int = 0, backup_name: str | None = None) -> str:
+    if selected_count:
+        suffix = f" from {backup_name}" if backup_name else ""
+        selection = f"Selected users: {selected_count}{suffix}"
+    else:
+        selection = "Selected users: none"
     return (
         f"Group Engine — {workspace}\n\n"
         "Central home for all group operations.\n"
-        "Check membership offline, or modify groups through one shared engine.\n\n"
+        "Write ops share one session: Select Users → Operation → Preview → Confirm → Execute.\n\n"
+        f"{selection}\n\n"
         "1. Check\n"
-        "2. Add\n"
-        "3. Remove\n"
-        "4. Replace\n"
-        "5. History"
+        "2. Select Users\n"
+        "3. Add\n"
+        "4. Remove\n"
+        "5. Replace\n"
+        "6. History"
     )
 
 
-def group_checker_coming_soon(operation: str) -> str:
+def group_checker_coming_soon(operation: str, *, description: str | None = None) -> str:
     descriptions = {
         "add": (
             "Add groups to selected users.\n"
@@ -192,8 +199,52 @@ def group_checker_coming_soon(operation: str) -> str:
         "history": "Review metadata for past group operations in this workspace.",
     }
     title = operation.capitalize()
-    body = descriptions.get(operation, "This operation is not available yet.")
-    return f"{title}\n\n{body}\n\nStatus: Coming soon"
+    body = description or descriptions.get(operation, "This operation is not available yet.")
+    return f"{title}\n\n{body}\n\nStatus: Coming soon\nUses the shared Group Engine workflow when implemented."
+
+
+def group_engine_select_users(selected_count: int) -> str:
+    return (
+        "Select Users\n\n"
+        "Selection persists until you leave Group Engine.\n"
+        f"Currently selected: {selected_count}\n\n"
+        "1. Select from backup\n"
+        "2. Clear selection"
+    )
+
+
+def group_engine_select_backup(sources: list[BackupSource]) -> str:
+    lines = ["Select Backup", ""]
+    for index, source in enumerate(sources, start=1):
+        lines.append(f"{index}. {source.name} — {source.users} users · {source.size_label}")
+    return "\n".join(lines)
+
+
+def group_engine_backup_mode(backup_name: str, users: int) -> str:
+    return (
+        f"Select Users\n\n"
+        f"Backup: {backup_name}\n"
+        f"Users in backup: {users}\n\n"
+        "1. Select all users\n"
+        "2. Enter usernames"
+    )
+
+
+def group_engine_ask_usernames(backup_name: str) -> str:
+    return (
+        f"Select Users\n\n"
+        f"Backup: {backup_name}\n\n"
+        "Send usernames as a message.\n"
+        "Example: alice, bob"
+    )
+
+
+def group_engine_selection_result(count: int) -> str:
+    return f"Selected {count} user(s)."
+
+
+def group_engine_error(detail: str) -> str:
+    return f"Group Engine\n\n{detail}"
 
 
 def group_checker_no_backups() -> str:
